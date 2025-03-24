@@ -1,2 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Virtual env
+venv/
+**/__pycache__/
+
+# Ignore all raw track data
+**/data/assetto_corsa_tracks/
