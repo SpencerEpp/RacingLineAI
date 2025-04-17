@@ -51,7 +51,67 @@ def parse_ideal_line(path):
     return df
 
 # === Preprocess Track Image ===
-# Arc-length Resampling with Savitzky-Golay Smoothing (best? marginally)
+def same_direction(vec_a, vec_b):
+    """Check if two sequences of 2D points have the same overall direction."""
+    direction_a = vec_a[1] - vec_a[0]
+    direction_b = vec_b[1] - vec_b[0]
+    return np.dot(direction_a, direction_b) > 0
+
+def scale_and_translate_edges(inner, outer, target):
+    """
+    Scales and translates inner/outer edges to match the fast_lane centerline bounding box.
+    Assumes correct shape and orientation (no rotation applied).
+    """
+    combined = np.vstack([inner, outer])
+    target_min = target.min(axis=0)
+    target_max = target.max(axis=0)
+    combined_min = combined.min(axis=0)
+    combined_max = combined.max(axis=0)
+
+    scale = (target_max - target_min) / (combined_max - combined_min)
+    offset = target_min - combined_min * scale
+
+    inner_aligned = inner * scale + offset
+    outer_aligned = outer * scale + offset
+    return inner_aligned, outer_aligned
+
+def find_best_roll_sum(a, b, sample_size=50):
+    """
+    Align b to a by testing circular shifts, only comparing first `sample_size` points.
+    Returns the shift value for which the first `sample_size` distances are minimized.
+    """
+    N = len(a)
+    best_shift = 0
+    min_total_dist = float("inf")
+
+    for shift in range(N):
+        b_shifted = np.roll(b, shift, axis=0)
+        # Only compare first `sample_size` pairs
+        total_dist = np.linalg.norm(a[:sample_size] - b_shifted[:sample_size], axis=1).sum()
+        if total_dist < min_total_dist:
+            min_total_dist = total_dist
+            best_shift = shift
+
+    return best_shift
+
+def find_best_roll_mean(left_edge, right_edge, sample_size=10):
+    """
+    Find the optimal roll for right_edge to best align it to left_edge
+    using only the first `sample_size` points.
+    """
+    min_dist = float("inf")
+    best_shift = 0
+
+    for shift in range(len(right_edge)):
+        rolled = np.roll(right_edge, shift, axis=0)
+        dist = np.linalg.norm(left_edge[:sample_size] - rolled[:sample_size], axis=1).mean()
+        if dist < min_dist:
+            min_dist = dist
+            best_shift = shift
+
+    return best_shift
+
+# Arc-length Resampling with Savitzky-Golay Smoothing
 def resample_edge_savitzky(edge, num_points, window_length=15, polyorder=3):
     # Close loop explicitly
     edge = np.vstack([edge, edge[0]])
@@ -77,8 +137,12 @@ def resample_edge_savitzky(edge, num_points, window_length=15, polyorder=3):
 
     return np.vstack([x_smooth, z_smooth]).T
 
-def process_track_image(image_path, ideal_df, window_length, polyorder):
-    # Load image
+def process_track_image(image_path, ideal_df, fast_df, window_length, polyorder):
+    """
+    Processes a transparent map.png to extract left/right track limits and
+    aligns them with the ideal racing line's scale and orientation.
+    """
+    # === Step 1: Load & Binarize Transparent Image ===
     image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
 
     # Convert transparent image to binary (white track and black edges)
@@ -87,29 +151,59 @@ def process_track_image(image_path, ideal_df, window_length, polyorder):
     _, binary = cv2.threshold(gray_image, 127, 255, cv2.THRESH_BINARY)
     binary[alpha_channel < 255] = 0 # could also have alpha_channel = 0 for strictly transparent 
 
-    # Extract edges using contours
+    # === Step 2: Extract and sort contours ===
     contours, _ = cv2.findContours(binary, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
-
     if len(sorted_contours) < 2:
         raise ValueError(f"Not enough contours in image: {image_path}")
 
-    outer_edge = sorted_contours[0].squeeze()
-    inner_edge = sorted_contours[1].squeeze()
+    outer = sorted_contours[0].squeeze()
+    inner = sorted_contours[1].squeeze()
 
-    # Resample edges to match ideal_line_df size
+    # === Step 3: Resample both contours to match ideal_df length ===
     num_points = len(ideal_df)
-    outer_edge_resampled = resample_edge_savitzky(outer_edge, num_points, window_length, polyorder)
-    inner_edge_resampled = resample_edge_savitzky(inner_edge, num_points, window_length, polyorder)
+    outer_resampled = resample_edge_savitzky(outer, num_points, window_length, polyorder)
+    inner_resampled = resample_edge_savitzky(inner, num_points, window_length, polyorder)
 
-    # Create DataFrame (x, z plane; y is zero)
+    # === Step 4: Flip if necessary to match ideal_df direction ===
+    ideal_vec = ideal_df[["x", "z"]].diff().iloc[1:].to_numpy()
+    outer_vec = np.diff(outer_resampled, axis=0)
+    inner_vec = np.diff(inner_resampled, axis=0)
+
+    if not same_direction(outer_vec[:20], ideal_vec[:20]):
+        outer_resampled = np.flipud(outer_resampled)
+    if not same_direction(inner_vec[:20], ideal_vec[:20]):
+        inner_resampled = np.flipud(inner_resampled)
+
+    # === Step 5: Scale and align both contours to ideal_df ===
+    # Use fast_lane.ai as the true centerline reference
+    fast_line = fast_df[["x", "z"]].to_numpy()
+
+    # Resample fast_line to match ideal_df length if necessary
+    if len(fast_line) != len(ideal_df):
+        interp_x = interp1d(np.linspace(0, 1, len(fast_line)), fast_line[:, 0])
+        interp_z = interp1d(np.linspace(0, 1, len(fast_line)), fast_line[:, 1])
+        resampled_fast_line = np.column_stack([
+            interp_x(np.linspace(0, 1, len(ideal_df))),
+            interp_z(np.linspace(0, 1, len(ideal_df)))
+        ])
+    else:
+        resampled_fast_line = fast_line
+
+    inner_resampled, outer_resampled = scale_and_translate_edges(inner_resampled, outer_resampled, resampled_fast_line)
+
+    # === Step 6: Align inner with outer using a small rolling window ===
+    shift = find_best_roll_mean(outer_resampled, inner_resampled, sample_size=20)
+    inner_resampled = np.roll(inner_resampled, shift, axis=0)
+
+    # === Step 7: Assemble into DataFrame ===
     track_edges_df = pd.DataFrame({
-        'left_x': outer_edge_resampled[:, 0],
-        'left_y': 0,
-        'left_z': outer_edge_resampled[:, 1],
-        'right_x': inner_edge_resampled[:, 0],
-        'right_y': 0,
-        'right_z': inner_edge_resampled[:, 1]
+        "left_x": outer_resampled[:, 0],
+        "left_y": 0,
+        "left_z": outer_resampled[:, 1],
+        "right_x": inner_resampled[:, 0],
+        "right_y": 0,
+        "right_z": inner_resampled[:, 1]
     })
 
     return track_edges_df
@@ -312,7 +406,9 @@ def process_track(track_name, tracks_root, output_root, window_length=15, polyor
 
         try:
             ideal_df = parse_ideal_line(ideal_path)
-            edges_df = process_track_image(image_path, ideal_df, window_length, polyorder)
+            fast_df = parse_ideal_line(fast_path)
+            edges_df = process_track_image(image_path, ideal_df, fast_df, window_length, polyorder)
+
 
             if len(ideal_df) != len(edges_df):
                 raise ValueError(f"Length mismatch: {len(ideal_df)} vs {len(edges_df)}")
