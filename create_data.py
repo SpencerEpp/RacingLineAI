@@ -139,19 +139,17 @@ def resample_edge_savitzky(edge, num_points, window_length=15, polyorder=3):
 
 def process_track_image(image_path, ideal_df, fast_df, window_length, polyorder):
     """
-    Processes a transparent map.png to extract left/right track limits and
-    aligns them with the ideal racing line's scale and orientation.
+    Processes a transparent map.png image to extract left and right track edge contours,
+    then resamples, aligns, and scales them to match the fast_lane.ai centerline. 
     """
-    # === Step 1: Load & Binarize Transparent Image ===
+    # === Load & Binarize Transparent Image ===
     image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-
-    # Convert transparent image to binary (white track and black edges)
     alpha_channel = image[:, :, 3]
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
     _, binary = cv2.threshold(gray_image, 127, 255, cv2.THRESH_BINARY)
     binary[alpha_channel < 255] = 0 # could also have alpha_channel = 0 for strictly transparent 
 
-    # === Step 2: Extract and sort contours ===
+    # === Extract and sort contours ===
     contours, _ = cv2.findContours(binary, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
     if len(sorted_contours) < 2:
@@ -160,22 +158,20 @@ def process_track_image(image_path, ideal_df, fast_df, window_length, polyorder)
     outer = sorted_contours[0].squeeze()
     inner = sorted_contours[1].squeeze()
 
-    # === Step 3: Resample both contours to match ideal_df length ===
+    # === Resample both contours to match ideal_df length ===
     num_points = len(ideal_df)
     outer_resampled = resample_edge_savitzky(outer, num_points, window_length, polyorder)
     inner_resampled = resample_edge_savitzky(inner, num_points, window_length, polyorder)
 
-    # === Step 4: Flip if necessary to match ideal_df direction ===
-    ideal_vec = ideal_df[["x", "z"]].diff().iloc[1:].to_numpy()
-    outer_vec = np.diff(outer_resampled, axis=0)
-    inner_vec = np.diff(inner_resampled, axis=0)
-
-    if not same_direction(outer_vec[:20], ideal_vec[:20]):
-        outer_resampled = np.flipud(outer_resampled)
-    if not same_direction(inner_vec[:20], ideal_vec[:20]):
+    # === Ensure both edges move in the same direction ===
+    if not same_direction(outer_resampled[:20], inner_resampled[:20]):
         inner_resampled = np.flipud(inner_resampled)
 
-    # === Step 5: Scale and align both contours to ideal_df ===
+    # === Roll right (inner) to match left (outer) ===
+    shift = find_best_roll_mean(outer_resampled, inner_resampled, sample_size=20)
+    inner_resampled = np.roll(inner_resampled, shift, axis=0)
+
+    # === Scale and align both contours to ideal_df ===
     # Use fast_lane.ai as the true centerline reference
     fast_line = fast_df[["x", "z"]].to_numpy()
 
@@ -192,11 +188,15 @@ def process_track_image(image_path, ideal_df, fast_df, window_length, polyorder)
 
     inner_resampled, outer_resampled = scale_and_translate_edges(inner_resampled, outer_resampled, resampled_fast_line)
 
-    # === Step 6: Align inner with outer using a small rolling window ===
-    shift = find_best_roll_mean(outer_resampled, inner_resampled, sample_size=20)
-    inner_resampled = np.roll(inner_resampled, shift, axis=0)
+    # === Roll both together to match ideal_df ===
+    edge_centerline = (inner_resampled + outer_resampled) / 2
+    ideal_line = ideal_df[["x", "z"]].to_numpy()
+    best_shift = find_best_roll_mean(ideal_line, edge_centerline, sample_size=30)
 
-    # === Step 7: Assemble into DataFrame ===
+    inner_resampled = np.roll(inner_resampled, best_shift, axis=0)
+    outer_resampled = np.roll(outer_resampled, best_shift, axis=0)
+
+    # === Assemble into DataFrame ===
     track_edges_df = pd.DataFrame({
         "left_x": outer_resampled[:, 0],
         "left_y": 0,
