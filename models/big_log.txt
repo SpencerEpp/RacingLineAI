@@ -1,0 +1,506 @@
+Preparing dataset...
+Total sequences loaded: 132916
+Initializing model...
+Training started...
+                                                                             
+Epoch 01: Train Loss = 0.0324 | Val Loss = 0.0303 | Lr = 0.0005
+Best model saved at epoch 1
+                                                                             
+Epoch 02: Train Loss = 0.0303 | Val Loss = 0.0296 | Lr = 0.0005
+Best model saved at epoch 2
+                                                                             
+Epoch 03: Train Loss = 0.0298 | Val Loss = 0.0291 | Lr = 0.0005
+Best model saved at epoch 3
+                                                                             
+Epoch 04: Train Loss = 0.0291 | Val Loss = 0.0287 | Lr = 0.0005
+Best model saved at epoch 4
+                                                                             
+Epoch 05: Train Loss = 0.0283 | Val Loss = 0.0274 | Lr = 0.0005
+Best model saved at epoch 5
+                                                                             
+Epoch 06: Train Loss = 0.0271 | Val Loss = 0.0260 | Lr = 0.0005
+Best model saved at epoch 6
+                                                                             
+Epoch 07: Train Loss = 0.0259 | Val Loss = 0.0263 | Lr = 0.0005
+                                                                             
+Epoch 08: Train Loss = 0.0247 | Val Loss = 0.0231 | Lr = 0.0005
+Best model saved at epoch 8
+                                                                             
+Epoch 09: Train Loss = 0.0238 | Val Loss = 0.0233 | Lr = 0.0005
+                                                                              
+Epoch 10: Train Loss = 0.0230 | Val Loss = 0.0228 | Lr = 0.0005
+Best model saved at epoch 10
+                                                                              
+Epoch 11: Train Loss = 0.0225 | Val Loss = 0.0217 | Lr = 0.0005
+Best model saved at epoch 11
+                                                                              
+Epoch 12: Train Loss = 0.0219 | Val Loss = 0.0215 | Lr = 0.0005
+Best model saved at epoch 12
+                                                                              
+Epoch 13: Train Loss = 0.0214 | Val Loss = 0.0203 | Lr = 0.0005
+Best model saved at epoch 13
+                                                                              
+Epoch 14: Train Loss = 0.0212 | Val Loss = 0.0209 | Lr = 0.0005
+                                                                              
+Epoch 15: Train Loss = 0.0207 | Val Loss = 0.0217 | Lr = 0.0005
+                                                                              
+Epoch 16: Train Loss = 0.0207 | Val Loss = 0.0213 | Lr = 0.0005
+                                                                              
+Epoch 17: Train Loss = 0.0203 | Val Loss = 0.0194 | Lr = 0.0005
+Best model saved at epoch 17
+                                                                              
+Epoch 18: Train Loss = 0.0201 | Val Loss = 0.0204 | Lr = 0.0005
+                                                                              
+Epoch 19: Train Loss = 0.0199 | Val Loss = 0.0199 | Lr = 0.0005
+                                                                              
+Epoch 20: Train Loss = 0.0197 | Val Loss = 0.0190 | Lr = 0.0005
+Best model saved at epoch 20
+                                                                              
+Epoch 21: Train Loss = 0.0196 | Val Loss = 0.0191 | Lr = 0.0005
+                                                                              
+Epoch 22: Train Loss = 0.0195 | Val Loss = 0.0220 | Lr = 0.0005
+                                                                              
+Epoch 23: Train Loss = 0.0193 | Val Loss = 0.0187 | Lr = 0.0005
+Best model saved at epoch 23
+                                                                              
+Epoch 24: Train Loss = 0.0192 | Val Loss = 0.0213 | Lr = 0.0005
+                                                                              
+Epoch 25: Train Loss = 0.0193 | Val Loss = 0.0195 | Lr = 0.0005
+                                                                              
+Epoch 26: Train Loss = 0.0189 | Val Loss = 0.0181 | Lr = 0.0005
+Best model saved at epoch 26
+                                                                              
+Epoch 27: Train Loss = 0.0188 | Val Loss = 0.0179 | Lr = 0.0005
+Best model saved at epoch 27
+                                                                              
+Epoch 28: Train Loss = 0.0187 | Val Loss = 0.0182 | Lr = 0.0005
+                                                                              
+Epoch 29: Train Loss = 0.0188 | Val Loss = 0.0183 | Lr = 0.0005
+                                                                              
+Epoch 30: Train Loss = 0.0186 | Val Loss = 0.0180 | Lr = 0.0005
+                                                                              
+Epoch 31: Train Loss = 0.0185 | Val Loss = 0.0184 | Lr = 0.0005
+                                                                              
+Epoch 32: Train Loss = 0.0184 | Val Loss = 0.0176 | Lr = 0.0005
+Best model saved at epoch 32
+                                                                              
+Epoch 33: Train Loss = 0.0184 | Val Loss = 0.0184 | Lr = 0.0005
+                                                                              
+Epoch 34: Train Loss = 0.0183 | Val Loss = 0.0176 | Lr = 0.0005
+Best model saved at epoch 34
+                                                                              
+Epoch 35: Train Loss = 0.0182 | Val Loss = 0.0181 | Lr = 0.0005
+                                                                              
+Epoch 36: Train Loss = 0.0181 | Val Loss = 0.0178 | Lr = 0.0005
+                                                                              
+Epoch 37: Train Loss = 0.0180 | Val Loss = 0.0197 | Lr = 0.0005
+                                                                              
+Epoch 38: Train Loss = 0.0180 | Val Loss = 0.0175 | Lr = 0.0005
+Best model saved at epoch 38
+                                                                              
+Epoch 39: Train Loss = 0.0180 | Val Loss = 0.0171 | Lr = 0.0005
+Best model saved at epoch 39
+                                                                              
+Epoch 40: Train Loss = 0.0179 | Val Loss = 0.0174 | Lr = 0.0005
+                                                                              
+Epoch 41: Train Loss = 0.0179 | Val Loss = 0.0174 | Lr = 0.0005
+                                                                              
+Epoch 42: Train Loss = 0.0178 | Val Loss = 0.0175 | Lr = 0.0005
+                                                                              
+Epoch 43: Train Loss = 0.0178 | Val Loss = 0.0176 | Lr = 0.0005
+                                                                              
+Epoch 44: Train Loss = 0.0178 | Val Loss = 0.0170 | Lr = 0.0005
+Best model saved at epoch 44
+                                                                              
+Epoch 45: Train Loss = 0.0177 | Val Loss = 0.0173 | Lr = 0.0005
+                                                                              
+Epoch 46: Train Loss = 0.0176 | Val Loss = 0.0169 | Lr = 0.0005
+Best model saved at epoch 46
+                                                                              
+Epoch 47: Train Loss = 0.0177 | Val Loss = 0.0180 | Lr = 0.0005
+                                                                              
+Epoch 48: Train Loss = 0.0176 | Val Loss = 0.0166 | Lr = 0.0005
+Best model saved at epoch 48
+                                                                              
+Epoch 49: Train Loss = 0.0176 | Val Loss = 0.0167 | Lr = 0.0005
+                                                                              
+Epoch 50: Train Loss = 0.0174 | Val Loss = 0.0167 | Lr = 0.0005
+                                                                              
+Epoch 51: Train Loss = 0.0175 | Val Loss = 0.0169 | Lr = 0.0005
+                                                                              
+Epoch 52: Train Loss = 0.0175 | Val Loss = 0.0169 | Lr = 0.0005
+                                                                              
+Epoch 53: Train Loss = 0.0175 | Val Loss = 0.0165 | Lr = 0.0005
+Best model saved at epoch 53
+                                                                              
+Epoch 54: Train Loss = 0.0174 | Val Loss = 0.0167 | Lr = 0.0005
+                                                                              
+Epoch 55: Train Loss = 0.0173 | Val Loss = 0.0183 | Lr = 0.0005
+                                                                              
+Epoch 56: Train Loss = 0.0173 | Val Loss = 0.0169 | Lr = 0.0005
+                                                                              
+Epoch 57: Train Loss = 0.0173 | Val Loss = 0.0168 | Lr = 0.0005
+                                                                              
+Epoch 58: Train Loss = 0.0172 | Val Loss = 0.0165 | Lr = 0.0005
+Best model saved at epoch 58
+                                                                              
+Epoch 59: Train Loss = 0.0173 | Val Loss = 0.0169 | Lr = 0.0005
+                                                                              
+Epoch 60: Train Loss = 0.0172 | Val Loss = 0.0164 | Lr = 0.0005
+Best model saved at epoch 60
+                                                                              
+Epoch 61: Train Loss = 0.0172 | Val Loss = 0.0164 | Lr = 0.0005
+                                                                              
+Epoch 62: Train Loss = 0.0171 | Val Loss = 0.0164 | Lr = 0.0005
+Best model saved at epoch 62
+                                                                              
+Epoch 63: Train Loss = 0.0171 | Val Loss = 0.0165 | Lr = 0.0005
+                                                                              
+Epoch 64: Train Loss = 0.0171 | Val Loss = 0.0165 | Lr = 0.0005
+                                                                              
+Epoch 65: Train Loss = 0.0171 | Val Loss = 0.0167 | Lr = 0.0005
+                                                                              
+Epoch 66: Train Loss = 0.0169 | Val Loss = 0.0164 | Lr = 0.0005
+Best model saved at epoch 66
+                                                                              
+Epoch 67: Train Loss = 0.0171 | Val Loss = 0.0173 | Lr = 0.0005
+                                                                              
+Epoch 68: Train Loss = 0.0169 | Val Loss = 0.0165 | Lr = 0.0005
+                                                                              
+Epoch 69: Train Loss = 0.0170 | Val Loss = 0.0163 | Lr = 0.0005
+Best model saved at epoch 69
+                                                                              
+Epoch 70: Train Loss = 0.0169 | Val Loss = 0.0162 | Lr = 0.0005
+Best model saved at epoch 70
+                                                                              
+Epoch 71: Train Loss = 0.0169 | Val Loss = 0.0163 | Lr = 0.0005
+                                                                              
+Epoch 72: Train Loss = 0.0169 | Val Loss = 0.0169 | Lr = 0.0005
+                                                                              
+Epoch 73: Train Loss = 0.0168 | Val Loss = 0.0166 | Lr = 0.0005
+                                                                              
+Epoch 74: Train Loss = 0.0169 | Val Loss = 0.0176 | Lr = 0.0005
+                                                                              
+Epoch 75: Train Loss = 0.0168 | Val Loss = 0.0163 | Lr = 0.0005
+                                                                              
+Epoch 76: Train Loss = 0.0169 | Val Loss = 0.0165 | Lr = 0.00025
+                                                                              
+Epoch 77: Train Loss = 0.0159 | Val Loss = 0.0155 | Lr = 0.00025
+Best model saved at epoch 77
+                                                                              
+Epoch 78: Train Loss = 0.0158 | Val Loss = 0.0155 | Lr = 0.00025
+Best model saved at epoch 78
+                                                                              
+Epoch 79: Train Loss = 0.0158 | Val Loss = 0.0154 | Lr = 0.00025
+Best model saved at epoch 79
+                                                                              
+Epoch 80: Train Loss = 0.0158 | Val Loss = 0.0152 | Lr = 0.00025
+Best model saved at epoch 80
+                                                                              
+Epoch 81: Train Loss = 0.0157 | Val Loss = 0.0153 | Lr = 0.00025
+                                                                              
+Epoch 82: Train Loss = 0.0157 | Val Loss = 0.0155 | Lr = 0.00025
+                                                                              
+Epoch 83: Train Loss = 0.0157 | Val Loss = 0.0153 | Lr = 0.00025
+                                                                              
+Epoch 84: Train Loss = 0.0157 | Val Loss = 0.0153 | Lr = 0.00025
+                                                                              
+Epoch 85: Train Loss = 0.0157 | Val Loss = 0.0153 | Lr = 0.00025
+                                                                              
+Epoch 86: Train Loss = 0.0157 | Val Loss = 0.0154 | Lr = 0.000125
+                                                                              
+Epoch 87: Train Loss = 0.0152 | Val Loss = 0.0150 | Lr = 0.000125
+Best model saved at epoch 87
+                                                                              
+Epoch 88: Train Loss = 0.0151 | Val Loss = 0.0148 | Lr = 0.000125
+Best model saved at epoch 88
+                                                                              
+Epoch 89: Train Loss = 0.0151 | Val Loss = 0.0153 | Lr = 0.000125
+                                                                              
+Epoch 90: Train Loss = 0.0151 | Val Loss = 0.0149 | Lr = 0.000125
+                                                                              
+Epoch 91: Train Loss = 0.0151 | Val Loss = 0.0148 | Lr = 0.000125
+                                                                              
+Epoch 92: Train Loss = 0.0151 | Val Loss = 0.0148 | Lr = 0.000125
+                                                                              
+Epoch 93: Train Loss = 0.0151 | Val Loss = 0.0148 | Lr = 0.000125
+Best model saved at epoch 93
+                                                                              
+Epoch 94: Train Loss = 0.0150 | Val Loss = 0.0147 | Lr = 0.000125
+Best model saved at epoch 94
+                                                                              
+Epoch 95: Train Loss = 0.0150 | Val Loss = 0.0149 | Lr = 0.000125
+                                                                              
+Epoch 96: Train Loss = 0.0150 | Val Loss = 0.0153 | Lr = 0.000125
+                                                                              
+Epoch 97: Train Loss = 0.0150 | Val Loss = 0.0150 | Lr = 0.000125
+                                                                             
+Epoch 98: Train Loss = 0.0150 | Val Loss = 0.0147 | Lr = 0.000125
+Best model saved at epoch 98
+                                                                              
+Epoch 99: Train Loss = 0.0150 | Val Loss = 0.0150 | Lr = 0.000125
+                                                                               
+Epoch 100: Train Loss = 0.0150 | Val Loss = 0.0149 | Lr = 0.000125
+                                                                               
+Epoch 101: Train Loss = 0.0150 | Val Loss = 0.0150 | Lr = 0.000125
+                                                                               
+Epoch 102: Train Loss = 0.0150 | Val Loss = 0.0147 | Lr = 0.000125
+Best model saved at epoch 102
+                                                                               
+Epoch 103: Train Loss = 0.0149 | Val Loss = 0.0149 | Lr = 0.000125
+                                                                               
+Epoch 104: Train Loss = 0.0150 | Val Loss = 0.0149 | Lr = 0.000125
+                                                                               
+Epoch 105: Train Loss = 0.0149 | Val Loss = 0.0147 | Lr = 0.000125
+                                                                               
+Epoch 106: Train Loss = 0.0149 | Val Loss = 0.0147 | Lr = 0.000125
+                                                                               
+Epoch 107: Train Loss = 0.0149 | Val Loss = 0.0148 | Lr = 0.000125
+                                                                               
+Epoch 108: Train Loss = 0.0149 | Val Loss = 0.0147 | Lr = 6.25e-05
+                                                                               
+Epoch 109: Train Loss = 0.0146 | Val Loss = 0.0143 | Lr = 6.25e-05
+Best model saved at epoch 109
+                                                                               
+Epoch 110: Train Loss = 0.0146 | Val Loss = 0.0143 | Lr = 6.25e-05
+Best model saved at epoch 110
+                                                                               
+Epoch 111: Train Loss = 0.0146 | Val Loss = 0.0142 | Lr = 6.25e-05
+Best model saved at epoch 111
+                                                                               
+Epoch 112: Train Loss = 0.0145 | Val Loss = 0.0144 | Lr = 6.25e-05
+                                                                               
+Epoch 113: Train Loss = 0.0145 | Val Loss = 0.0143 | Lr = 6.25e-05
+                                                                               
+Epoch 114: Train Loss = 0.0145 | Val Loss = 0.0144 | Lr = 6.25e-05
+                                                                               
+Epoch 115: Train Loss = 0.0145 | Val Loss = 0.0143 | Lr = 6.25e-05
+                                                                               
+Epoch 116: Train Loss = 0.0145 | Val Loss = 0.0144 | Lr = 6.25e-05
+                                                                               
+Epoch 117: Train Loss = 0.0145 | Val Loss = 0.0142 | Lr = 6.25e-05
+Best model saved at epoch 117
+                                                                               
+Epoch 118: Train Loss = 0.0145 | Val Loss = 0.0143 | Lr = 6.25e-05
+                                                                               
+Epoch 119: Train Loss = 0.0145 | Val Loss = 0.0142 | Lr = 6.25e-05
+Best model saved at epoch 119
+                                                                               
+Epoch 120: Train Loss = 0.0145 | Val Loss = 0.0142 | Lr = 6.25e-05
+Best model saved at epoch 120
+                                                                               
+Epoch 121: Train Loss = 0.0145 | Val Loss = 0.0143 | Lr = 6.25e-05
+                                                                               
+Epoch 122: Train Loss = 0.0145 | Val Loss = 0.0143 | Lr = 6.25e-05
+                                                                               
+Epoch 123: Train Loss = 0.0145 | Val Loss = 0.0144 | Lr = 6.25e-05
+                                                                               
+Epoch 124: Train Loss = 0.0145 | Val Loss = 0.0143 | Lr = 6.25e-05
+                                                                               
+Epoch 125: Train Loss = 0.0144 | Val Loss = 0.0145 | Lr = 6.25e-05
+                                                                               
+Epoch 126: Train Loss = 0.0145 | Val Loss = 0.0146 | Lr = 3.125e-05
+                                                                               
+Epoch 127: Train Loss = 0.0143 | Val Loss = 0.0141 | Lr = 3.125e-05
+Best model saved at epoch 127
+                                                                               
+Epoch 128: Train Loss = 0.0142 | Val Loss = 0.0140 | Lr = 3.125e-05
+Best model saved at epoch 128
+                                                                               
+Epoch 129: Train Loss = 0.0142 | Val Loss = 0.0140 | Lr = 3.125e-05
+                                                                               
+Epoch 130: Train Loss = 0.0142 | Val Loss = 0.0142 | Lr = 3.125e-05
+                                                                               
+Epoch 131: Train Loss = 0.0142 | Val Loss = 0.0140 | Lr = 3.125e-05
+                                                                               
+Epoch 132: Train Loss = 0.0142 | Val Loss = 0.0141 | Lr = 3.125e-05
+                                                                               
+Epoch 133: Train Loss = 0.0142 | Val Loss = 0.0140 | Lr = 3.125e-05
+Best model saved at epoch 133
+                                                                               
+Epoch 134: Train Loss = 0.0142 | Val Loss = 0.0140 | Lr = 3.125e-05
+                                                                               
+Epoch 135: Train Loss = 0.0142 | Val Loss = 0.0140 | Lr = 3.125e-05
+                                                                               
+Epoch 136: Train Loss = 0.0142 | Val Loss = 0.0140 | Lr = 3.125e-05
+                                                                               
+Epoch 137: Train Loss = 0.0142 | Val Loss = 0.0140 | Lr = 3.125e-05
+                                                                               
+Epoch 138: Train Loss = 0.0142 | Val Loss = 0.0140 | Lr = 3.125e-05
+                                                                               
+Epoch 139: Train Loss = 0.0142 | Val Loss = 0.0143 | Lr = 1.5625e-05
+                                                                               
+Epoch 140: Train Loss = 0.0141 | Val Loss = 0.0139 | Lr = 1.5625e-05
+Best model saved at epoch 140
+                                                                               
+Epoch 141: Train Loss = 0.0140 | Val Loss = 0.0139 | Lr = 1.5625e-05
+                                                                               
+Epoch 142: Train Loss = 0.0141 | Val Loss = 0.0139 | Lr = 1.5625e-05
+                                                                               
+Epoch 143: Train Loss = 0.0141 | Val Loss = 0.0139 | Lr = 1.5625e-05
+                                                                               
+Epoch 144: Train Loss = 0.0140 | Val Loss = 0.0138 | Lr = 1.5625e-05
+Best model saved at epoch 144
+                                                                               
+Epoch 145: Train Loss = 0.0140 | Val Loss = 0.0139 | Lr = 1.5625e-05
+                                                                               
+Epoch 146: Train Loss = 0.0140 | Val Loss = 0.0139 | Lr = 1.5625e-05
+                                                                              
+Epoch 147: Train Loss = 0.0140 | Val Loss = 0.0139 | Lr = 1.5625e-05
+                                                                              
+Epoch 148: Train Loss = 0.0140 | Val Loss = 0.0138 | Lr = 1.5625e-05
+                                                                               
+Epoch 149: Train Loss = 0.0140 | Val Loss = 0.0139 | Lr = 1.5625e-05
+                                                                              
+Epoch 150: Train Loss = 0.0140 | Val Loss = 0.0138 | Lr = 7.8125e-06
+                                                                              
+Epoch 151: Train Loss = 0.0140 | Val Loss = 0.0138 | Lr = 7.8125e-06
+Best model saved at epoch 151
+                                                                               
+Epoch 152: Train Loss = 0.0140 | Val Loss = 0.0138 | Lr = 7.8125e-06
+Best model saved at epoch 152
+                                                                               
+Epoch 153: Train Loss = 0.0140 | Val Loss = 0.0138 | Lr = 7.8125e-06
+Best model saved at epoch 153
+                                                                               
+Epoch 154: Train Loss = 0.0139 | Val Loss = 0.0138 | Lr = 7.8125e-06
+Best model saved at epoch 154
+                                                                               
+Epoch 155: Train Loss = 0.0140 | Val Loss = 0.0138 | Lr = 7.8125e-06
+                                                                               
+Epoch 156: Train Loss = 0.0140 | Val Loss = 0.0138 | Lr = 7.8125e-06
+Best model saved at epoch 156
+                                                                               
+Epoch 157: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 7.8125e-06
+Best model saved at epoch 157
+                                                                               
+Epoch 158: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 7.8125e-06
+Best model saved at epoch 158
+                                                                               
+Epoch 159: Train Loss = 0.0139 | Val Loss = 0.0138 | Lr = 7.8125e-06
+                                                                               
+Epoch 160: Train Loss = 0.0139 | Val Loss = 0.0138 | Lr = 7.8125e-06
+                                                                               
+Epoch 161: Train Loss = 0.0139 | Val Loss = 0.0138 | Lr = 7.8125e-06
+                                                                               
+Epoch 162: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 7.8125e-06
+Best model saved at epoch 162
+                                                                               
+Epoch 163: Train Loss = 0.0139 | Val Loss = 0.0138 | Lr = 7.8125e-06
+                                                                               
+Epoch 164: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 7.8125e-06
+                                                                               
+Epoch 165: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 7.8125e-06
+                                                                               
+Epoch 166: Train Loss = 0.0139 | Val Loss = 0.0138 | Lr = 7.8125e-06
+                                                                               
+Epoch 167: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 7.8125e-06
+                                                                               
+Epoch 168: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 169: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+Best model saved at epoch 169
+                                                                               
+Epoch 170: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 171: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 172: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 173: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+Best model saved at epoch 173
+                                                                               
+Epoch 174: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+Best model saved at epoch 174
+                                                                               
+Epoch 175: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+Best model saved at epoch 175
+                                                                               
+Epoch 176: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 177: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+Best model saved at epoch 177
+                                                                               
+Epoch 178: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 179: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 180: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 181: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 182: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 3.90625e-06
+                                                                               
+Epoch 183: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 1.953125e-06
+                                                                               
+Epoch 184: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 1.953125e-06
+                                                                               
+Epoch 185: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 1.953125e-06
+Best model saved at epoch 185
+                                                                               
+Epoch 186: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 1.953125e-06
+Best model saved at epoch 186
+                                                                               
+Epoch 187: Train Loss = 0.0138 | Val Loss = 0.0137 | Lr = 1.953125e-06
+Best model saved at epoch 187
+                                                                               
+Epoch 188: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 1.953125e-06
+                                                                               
+Epoch 189: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 1.953125e-06
+                                                                               
+Epoch 190: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 1.953125e-06
+                                                                               
+Epoch 191: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 1.953125e-06
+                                                                               
+Epoch 192: Train Loss = 0.0138 | Val Loss = 0.0137 | Lr = 1.953125e-06
+                                                                               
+Epoch 193: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 9.765625e-07
+                                                                               
+Epoch 194: Train Loss = 0.0138 | Val Loss = 0.0137 | Lr = 9.765625e-07
+Best model saved at epoch 194
+                                                                               
+Epoch 195: Train Loss = 0.0138 | Val Loss = 0.0137 | Lr = 9.765625e-07
+                                                                               
+Epoch 196: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 9.765625e-07
+                                                                               
+Epoch 197: Train Loss = 0.0138 | Val Loss = 0.0137 | Lr = 9.765625e-07
+                                                                               
+Epoch 198: Train Loss = 0.0138 | Val Loss = 0.0137 | Lr = 9.765625e-07
+                                                                               
+Epoch 199: Train Loss = 0.0139 | Val Loss = 0.0137 | Lr = 9.765625e-07
+Best model saved at epoch 199
+                                                                               
+Epoch 200: Train Loss = 0.0138 | Val Loss = 0.0137 | Lr = 9.765625e-07
+Training complete. Model saved to models/racing_line_lstm.pt
+
+
+Reported Accuracy from old predictor
+Accuracy on full 24D output: 95.04%
+
+Reported Accuracy from new predictor
+Per-Feature Accuracy (%):
+------------------------------------------------------------
+               x:  94.90% (layout-based)    99.19% (train-scale)
+               y:  91.83% (layout-based)    99.28% (train-scale)
+               z:  95.01% (layout-based)    99.09% (train-scale)
+          length:  96.65% (layout-based)    99.40% (train-scale)
+              id:  96.67% (layout-based)    99.39% (train-scale)
+           speed:  88.01% (layout-based)    91.72% (train-scale)
+             gas:  72.11% (layout-based)    72.11% (train-scale)
+           brake:  87.75% (layout-based)    87.75% (train-scale)
+  obsolete_lat_g:  88.04% (layout-based)    89.84% (train-scale)
+          radius:  48.33% (layout-based)    99.99% (train-scale)
+       side_left:  93.94% (layout-based)    97.44% (train-scale)
+      side_right:  92.94% (layout-based)    96.08% (train-scale)
+          camber:  85.20% (layout-based)    96.79% (train-scale)
+       direction:  74.50% (layout-based)    74.50% (train-scale)
+        normal_x:  98.18% (layout-based)    97.44% (train-scale)
+        normal_y:  99.55% (layout-based)    99.53% (train-scale)
+        normal_z:  98.67% (layout-based)    98.44% (train-scale)
+    extra_length:  86.94% (layout-based)    98.38% (train-scale)
+       forward_x: N/A (zero test range)
+       forward_y: N/A (zero test range)
+       forward_z: N/A (zero test range)
+             tag: N/A (zero test range)
+           grade:  92.78% (layout-based)    97.69% (train-scale)
+Mean X/Z spatial error: 82.64m, Max: 563.62m
