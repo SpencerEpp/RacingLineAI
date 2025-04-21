@@ -1,5 +1,5 @@
 # Virtual env
-venv/
+.venv/
 **/__pycache__/
 
 # Ignore all raw track data
