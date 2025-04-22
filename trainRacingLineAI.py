@@ -22,61 +22,65 @@ def is_circular_track(df, output_cols, threshold=5.0):
     dist = np.linalg.norm(start[[0, 2]] - end[[0, 2]])  # Use X and Z
     return dist <= threshold
 
-def get_centered_sequence(X_scaled, center_idx, seq_len, circular):
+def get_centered_sequence(X, center_idx, seq_len, circular):
     half = seq_len // 2
-    n = len(X_scaled)
+    n = len(X)
 
     if circular:
         indices = [(center_idx - half + i) % n for i in range(seq_len)]
-        return X_scaled[indices]
+        return X[indices]
     else:
         left = center_idx - half
         right = center_idx + half + 1
         if left < 0:
-            delta = X_scaled[1] - X_scaled[0]
-            pre = [X_scaled[0] - delta * (i + 1) for i in reversed(range(-left))]
-            seq = np.vstack(pre + [*X_scaled[0:right]])
+            delta = X[1] - X[0]
+            pre = [X[0] - delta * (i + 1) for i in reversed(range(-left))]
+            seq = np.vstack(pre + [*X[0:right]])
         elif right > n:
-            delta = X_scaled[-1] - X_scaled[-2]
-            post = [X_scaled[-1] + delta * (i + 1) for i in range(right - n)]
-            seq = np.vstack([*X_scaled[left:n]] + post)
+            delta = X[-1] - X[-2]
+            post = [X[-1] + delta * (i + 1) for i in range(right - n)]
+            seq = np.vstack([*X[left:n]] + post)
         else:
-            seq = X_scaled[left:right]
+            seq = X[left:right]
         return seq
 
 class RacingLineDataset(Dataset):
     def __init__(self, config):
         self.inputs, self.targets = [], []
-        self.scaler_x = MinMaxScaler()
-        self.scaler_y = MinMaxScaler()
-        all_X, all_Y = [], []
+        # self.scaler_x = MinMaxScaler()
+        # self.scaler_y = MinMaxScaler()
+        # all_X, all_Y = [], []
         train_files = sorted(glob(os.path.join(config["train_data_path"], "*.csv")))
         test_files = sorted(glob(os.path.join(config["test_data_path"], "*.csv")))
 
         # === First pass: Collect data for global fitting ===
-        for file in train_files:
-            df = pd.read_csv(file)
-            X = df[config["input_cols"]].values
-            Y = df[config["output_cols"]].values
-            all_X.append(X)
-            all_Y.append(Y)
-        for file in test_files:
-            df = pd.read_csv(file)
-            X = df[config["input_cols"]].values
-            Y = df[config["output_cols"]].values
-            all_X.append(X)
-            all_Y.append(Y)
-        all_X = np.vstack(all_X)
-        all_Y = np.vstack(all_Y)
-        self.scaler_x.fit(all_X)
-        self.scaler_y.fit(all_Y)
+        # for file in train_files:
+        #     df = pd.read_csv(file)
+        #     X = df[config["input_cols"]].values
+        #     Y = df[config["output_cols"]].values
+        #     all_X.append(X)
+        #     all_Y.append(Y)
+        # for file in test_files:
+        #     df = pd.read_csv(file)
+        #     X = df[config["input_cols"]].values
+        #     Y = df[config["output_cols"]].values
+        #     all_X.append(X)
+        #     all_Y.append(Y)
+        # all_X = np.vstack(all_X)
+        # all_Y = np.vstack(all_Y)
+        # self.scaler_x.fit(all_X)
+        # self.scaler_y.fit(all_Y)
 
         # === Second pass: Normalize and extract sequences ===
         for file in train_files:
             df = pd.read_csv(file)
             is_circular = is_circular_track(df, config["output_cols"])
-            X = self.scaler_x.transform(df[config["input_cols"]].values)
-            Y = self.scaler_y.transform(df[config["output_cols"]].values)
+            # X = self.scaler_x.transform(df[config["input_cols"]].values)
+            # Y = self.scaler_y.transform(df[config["output_cols"]].values)
+            X = df[config["input_cols"]].values
+            Y = df[config["output_cols"]].values
+            X -= np.min(X, axis=0)
+            Y -= np.min(Y, axis=0)
 
             for i in range(len(X)):
                 self.inputs.append(get_centered_sequence(X, i, config["seq_len"], is_circular))
@@ -138,7 +142,6 @@ def weighted_mse(preds, targets, w_xyz=(10, 1, 10)):
     z_loss = w_xyz[2] * loss[:, 2]
     return (x_loss + y_loss + z_loss).mean()
 
-
 # === Evaluation Function ===
 def evaluate_model(model, dataloader, criterion, config):
     model.eval()
@@ -173,9 +176,9 @@ def load_model(path, device):
 
 
 # === Training Function ===
-def train_model(model, train_loader, val_loader, config, scaler_x, scaler_y):
+def train_model(model, train_loader, val_loader, config, scaler_x=None, scaler_y=None):
     optimizer = torch.optim.Adam(model.parameters(), lr=config["learning_rate"])
-    criterion = weighted_mse
+    criterion = torch.nn.L1Loss(reduction='sum') #weighted_mse
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=config["scheduler_patience"])
     best_val_loss = float("inf")
     train_losses = []
@@ -233,8 +236,8 @@ def run_pipeline(config, plot=False):
 
     print("Preparing dataset...")
     full_dataset = RacingLineDataset(config)
-    scaler_x = full_dataset.scaler_x
-    scaler_y = full_dataset.scaler_y
+    # scaler_x = full_dataset.scaler_x
+    # scaler_y = full_dataset.scaler_y
     print("Total sequences loaded:", len(full_dataset))
 
     train_len = int(len(full_dataset) * config["train_split"])
@@ -249,10 +252,12 @@ def run_pipeline(config, plot=False):
     val_loader = DataLoader(val_ds, batch_size=config["batch_size"], shuffle=False)
 
     print(f"Initializing model...")
-    model = RacingLineLSTMWithAttention(config, scaler_x, scaler_y).to(config["device"]) 
+    # model = RacingLineLSTMWithAttention(config, scaler_x, scaler_y).to(config["device"]) 
+    model = RacingLineLSTMWithAttention(config).to(config["device"])
 
     print("Training started...")
-    train_losses, val_losses = train_model(model, train_loader, val_loader, config, scaler_x, scaler_y)
+    # train_losses, val_losses = train_model(model, train_loader, val_loader, config, scaler_x, scaler_y)
+    train_losses, val_losses = train_model(model, train_loader, val_loader, config)
     print(f"Training complete. Model saved to {config['model_save_path']}")
 
     if plot:

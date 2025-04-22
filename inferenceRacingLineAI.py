@@ -220,8 +220,10 @@ def get_racing_line(data_dir, data_type, model_path):
                 raise ValueError(f"Unknown data type: {data_type} - use 'image' or 'coords'.")
         
         is_circular = is_circular_track(df, config["input_cols"])
-        X = df[config["input_cols"]].values
-        X_scaled = scaler_x.transform(X)
+        print(f"Track is circular: {is_circular}")
+        X_scaled = df[config["input_cols"]].values
+        # X = df[config["input_cols"]].values
+        # # X_scaled = scaler_x.transform(X)
         n = len(X_scaled)
         preds_real = []
             
@@ -231,12 +233,13 @@ def get_racing_line(data_dir, data_type, model_path):
 
             with torch.no_grad():
                 pred_scaled = model(X_tensor).cpu().squeeze().numpy()
-                pred_real = scaler_y.inverse_transform(pred_scaled.reshape(1, -1))[0]
-            preds_real.append(pred_real)
+            #     pred_real = scaler_y.inverse_transform(pred_scaled.reshape(1, -1))[0]
+            # preds_real.append(pred_real)
+            preds_real.append(pred_scaled)
         
         preds_real = np.array(preds_real)
-        left_x, left_z = X[:, 0], X[:, 2]
-        right_x, right_z = X[:, 3], X[:, 5]
+        left_x, left_z = X_scaled[:, 0], X_scaled[:, 2]
+        right_x, right_z = X_scaled[:, 3], X_scaled[:, 5]
         plt.figure(figsize=(12, 6))
         if data_type == "image":
             plt.imshow(img, extent=[left_x.min(), right_x.max(), left_z.max(), left_z.min()])
