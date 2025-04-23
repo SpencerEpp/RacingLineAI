@@ -19,41 +19,61 @@ import matplotlib.pyplot as plt
 
 
 # === Model ===
-class RacingLineLSTMWithAttention(nn.Module):
-    def __init__(self, config, scaler_x=None, scaler_y=None):
+class Cerberus (torch.nn.Module):
+    def __init__(self, config):
         super().__init__()
-        self.bidirectional = config["bidirectional"]
-        self.hidden_size = config["hidden_size"]
-        self.num_directions = 2 if self.bidirectional else 1
 
-        self.lstm = nn.LSTM(
-            input_size=config["input_size"],
-            hidden_size=self.hidden_size,
-            num_layers=config["num_layers"],
-            dropout=config["dropout"],
-            batch_first=True,
-            bidirectional=self.bidirectional
+        #Thanks Resnet!
+        class ResBlock(torch.nn.Module):
+            def __init__(self, in_chans, out_chans, kern_size, padding, dilation):
+                super().__init__()
+                self.conv1 = torch.nn.Conv1d(in_chans, out_chans, kern_size, padding=padding, dilation=dilation)
+                self.relu = torch.nn.ReLU()
+                self.conv2 = torch.nn.Conv1d(out_chans, out_chans, kern_size, padding=padding, dilation=dilation)
+    
+                self.shortcut = torch.nn.Identity()
+                if in_chans != out_chans:
+                    self.shortcut = nn.Conv1d(in_chans, out_chans, kernel_size=1)
+                
+            def forward(self, x):
+                residual = self.shortcut(x)
+                return self.relu(self.conv2(self.relu(self.conv1(x))) + residual)
+            
+        
+        
+        self.encoder = torch.nn.Sequential(
+            ResBlock(config["input_size"], config["hidden1"], config["kern_size1"], config["padding1"], config["dilation1"]),
+            ResBlock(config["hidden1"], config["hidden1"], config["kern_size2"], config["padding2"], config["dilation2"])
         )
 
-        self.attn = nn.Linear(self.num_directions * self.hidden_size, 1)
-        self.dropout = nn.Dropout(config["dropout"])
-        self.fc = nn.Linear(self.num_directions * self.hidden_size, config["output_size"])
-        self.scaler_x = scaler_x
-        self.scaler_y = scaler_y
+        #x, y, z
+        self.position_head = torch.nn.Sequential(
+            torch.nn.Linear(config["hidden1"], config["pos_head_sz"]),
+            torch.nn.ReLU(),
+            torch.nn.Linear(config["pos_head_sz"], 3)
+        )
+
+        #speed, gas, brake, side-left, side-right
+        self.control_head = torch.nn.Sequential(
+            torch.nn.Linear(config["hidden1"] + 3, config["cont_head_sz"]),
+            torch.nn.ReLU(),
+            torch.nn.Linear(config["cont_head_sz"], 5)
+        )
+
+
+            
+        
 
     def forward(self, x):
-        lstm_out, _ = self.lstm(x)
-        attn_scores = self.attn(lstm_out)
-        attn_weights = torch.softmax(attn_scores, dim=1)
-        context = torch.sum(attn_weights * lstm_out, dim=1)
-        context = self.dropout(context)
-        return self.fc(context)
+        encoded = self.encoder(x)
+        encoded = torch.mean(encoded, dim=2)
 
-    def get_attention_weights(self, x):
-        lstm_out, _ = self.lstm(x)
-        attn_scores = self.attn(lstm_out)
-        attn_weights = torch.softmax(attn_scores, dim=1)
-        return attn_weights.squeeze(-1)
+        position = self.position_head(encoded)
+        control_in = torch.cat([encoded, position], dim=1)
+        control = self.control_head(control_in)
+
+        
+        return position, control
 
 
 # === Inference Helper Functions ===
@@ -62,10 +82,12 @@ def load_model(path, device):
     cfg = checkpoint["config"]
     scaler_x = checkpoint["scaler_x"]
     scaler_y = checkpoint["scaler_y"]
-    model = RacingLineLSTMWithAttention(cfg, scaler_x, scaler_y)
+    scaler_z = checkpoint["scaler_z"]
+    model = Cerberus(cfg)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.to(cfg["device"])
-    return model, cfg, scaler_x, scaler_y
+    return model, cfg, scaler_x, scaler_y, scaler_z
+
 
 def add_contextual_features(df):
     coords = df[["left_x", "left_y", "left_z", "right_x", "right_y", "right_z"]].values
@@ -226,10 +248,10 @@ def print_feature_accuracy(preds, trues, scaler_y, feature_names):
         print(f"{name:>16}: {acc_test:6.2f}% (layout-based)   {acc_train:6.2f}% (train-scale)")
 
 # === Inference On Testing Tracks ===
-def get_racing_line(data_dir, data_type, model_path):
+def get_racing_line(data_dir, data_type, model_path, seq_len):
     print("Loading model...")
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, config, scaler_x, scaler_y = load_model(model_path, device)
+    model, config, scaler_x, scaler_y, scaler_z = load_model(model_path, device)
     model.eval()
 
     print("Loading unseen layouts from:", data_dir)
@@ -268,9 +290,9 @@ def get_racing_line(data_dir, data_type, model_path):
         preds_real = []
             
         for i in tqdm(range(n), desc=f"[{layout_index + 1}/{total_layouts}]"):
-            seq = get_centered_sequence(X_scaled, i, config["seq_len"], is_circular)
-            X_tensor = torch.tensor(seq.reshape(1, config["seq_len"], -1), dtype=torch.float32).to(config["device"])
-
+            seq = get_centered_sequence(X_scaled, i, seq_len, is_circular)
+            X_tensor = torch.tensor(seq.reshape(1, seq_len, -1), dtype=torch.float32).to(config["device"])
+            X_tensor = X_tensor.permute(0, 2, 1)
             with torch.no_grad():
                 pred_scaled = model(X_tensor).cpu().squeeze().numpy()
                 pred_real = scaler_y.inverse_transform(pred_scaled.reshape(1, -1))[0]
@@ -282,9 +304,9 @@ def get_racing_line(data_dir, data_type, model_path):
         plt.figure(figsize=(12, 6))
         if data_type == "image":
             plt.imshow(img, extent=[left_x.min(), right_x.max(), left_z.max(), left_z.min()])
-        plt.plot(left_x, left_z, label="Left Edge", linewidth=1, linestyle=":", alpha=0.6)
-        plt.plot(right_x, right_z, label="Right Edge", linewidth=1, linestyle=":", alpha=0.6)
-        plt.plot(preds_real[:, 0], preds_real[:, 2], label="Predicted Center", linewidth=2, linestyle="--")
+        plt.plot(left_x, left_z, label="Left Edge", linewidth=1, linestyle=":", alpha=1)
+        plt.plot(right_x, right_z, label="Right Edge", linewidth=1, linestyle=":", alpha=1)
+        plt.plot(preds_real[:, 0], preds_real[:, 2], label="Predicted Center", linewidth=1, linestyle="--")
         plt.title(f"Predicted vs Track Edges: {layout_name}")
         plt.xlabel("X Coordinate")
         plt.ylabel("Z Coordinate")
