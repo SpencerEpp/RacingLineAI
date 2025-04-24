@@ -6,3 +6,4 @@ venv/
 # Ignore all raw track data
 **/data/assetto_corsa_tracks/
 **/data/already_processed_tracks
+**/data/

@@ -9,7 +9,7 @@ from scipy.spatial import KDTree
 import h5py
 
 
-from create_data import parse_ideal_line, find_kn5_file, find_ai_files
+from create_data import parse_ideal_line, find_ai_files
 
 
 
@@ -102,6 +102,7 @@ def process_track_image_two_electric_boogaloo(image_path, target_size=(256,256))
     center = generate_centerline(inner, outer)
 
 
+
     #NOTE/TODO: Move below into a new function that is optional if needed?
     #This is some hot garbage, but it gives us scaled images to work off of.
     #Hooray for CNN's!
@@ -160,67 +161,66 @@ def process_track_image_two_electric_boogaloo(image_path, target_size=(256,256))
             "pad"        : pad}
 
 
-def transform_ai_positions(ai_x, ai_y, scale, min_xy, pad):
-    ai_pos = np.stack([ai_x, ai_y], axis = 1)
+def normalize_ai(ai_x, ai_z, target_size=(256, 256)):
+    ai_pos = np.stack([ai_x, ai_z], axis=1)
+
+    min_xy = np.min(ai_pos, axis=0)
+    max_xy = np.max(ai_pos, axis=0)
+    width, height = max_xy - min_xy
+
+    scale = min(target_size[0] / width, target_size[1] / height)
     ai_scaled = (ai_pos - min_xy) * scale
-    ai_transformed = ai_scaled + pad
-    return ai_transformed
 
-# def align_ai_and_center(center, ai_transformed):
-#     center_tree = KDTree(center)
-#     distances, indices = center_tree.query(ai_transformed)
+    pad_x = (target_size[0] - (width * scale)) / 2
+    pad_y = (target_size[1] - (height * scale)) / 2
+    ai_padded = ai_scaled + np.array([pad_x, pad_y])
 
-#     aligned = center[indices]
-#     return aligned, distances
-
+    return ai_padded, scale, min_xy, np.array([pad_x, pad_y])
 
 
 '''align_ai_and_center
 gets the ai information matching the generated center line.
-Returns a DF that contains the ai information that matches each point
-on the center line.
 
-Note: There is some data loss here. It's intentional.
-We have may more AI points than our generated center line.
+Returns the following:
+final_ai: the final ai_df with the matched coordinates
+final_center: updated centerline dots (duplicates removed)
+unique_idx: unique centerline indexes. Used to remove excess patches.
 '''
-# def align_ai_and_center(center, ai_transformed, ai_df):
-#     center_tree = KDTree(center)
-#     distances, indices = center_tree.query(ai_transformed)
-
-#     n_centers = len(center)
-#     aligned_labels = [None] * n_centers
-
-#     for ai_idx, center_idx in enumerate(indices):
-#         aligned_labels[center_idx] = ai_df.iloc[ai_idx]
+def align_ai_and_center(center, ai_normed, ai_df):
+    ai_tree = KDTree(ai_normed)
+    distances, indices = ai_tree.query(center)
     
-#     aligned_df = pd.DataFrame([row.to_dict() if row is not None else None for row in aligned_labels])
-
-#     return aligned_df
-
-def align_ai_and_center(ai_transformed, center, ai_df):
-    center_tree = KDTree(center)
-    distances, indices = center_tree.query(ai_transformed)
-
-    # Create empty DataFrame with the same columns as ai_df, and one row per center point
-    aligned_df = pd.DataFrame(index=range(len(center)), columns=ai_df.columns)
-
-    # Fill rows in aligned_df at centerline indices with the corresponding ai_df rows
-    for ai_idx, center_idx in enumerate(indices):
-        aligned_df.iloc[center_idx] = ai_df.iloc[ai_idx]
-
-    return aligned_df, distances
+    _, unique_idx = np.unique(indices, return_index=True)
+    final_center = center[unique_idx]
+    final_ai = ai_df.iloc[indices[unique_idx]].reset_index(drop=True)
+    
+    return final_ai, final_center, unique_idx
 
 
-def save_track_data_as_hdf5(aligned_df, track_dict, filename, save_dir):
+def save_track_data_as_hdf5(track_dataset, filename, save_dir):
     os.makedirs(save_dir, exist_ok=True)
     path = os.path.join(save_dir, filename)
 
     with h5py.File(path, 'w') as file:
-        file.create_dataset("inner_edge", data=track_dict["inner"])
-        file.create_dataset("outer_edge", data=track_dict["outer"])
-        file.create_dataset("ai_data", data=aligned_df)
-        file.create_dataset("track_image", data=track_dict["track_image"])
-        file.create_dataset("patches", data=track_dict["patches"])
+        file.create_dataset("inner_edge", data=track_dataset["inner"])
+        file.create_dataset("outer_edge", data=track_dataset["outer"])
+        file.create_dataset("centerline", data=track_dataset["center"])
+        file.create_dataset("track_image", data=track_dataset["track_image"])
+        file.create_dataset("track_patches", data=track_dataset["track_patches"])
+        file.create_dataset("ai_norm", data=track_dataset["ai_norm"])
+
+        # Save transforms (as attributes)
+        file.attrs["track_transform_scale"] = track_dataset["track_transform"][0]
+        file.attrs["track_transform_min_xy"] = track_dataset["track_transform"][1]
+        file.attrs["track_transform_pad"] = track_dataset["track_transform"][2]
+
+        for col in track_dataset["ai_df"].columns:
+            file.create_dataset(f"ai_df/{col}", data=track_dataset["ai_df"][col].to_numpy())
+
+        # Save AI transform as attributes
+        file.attrs["ai_transform_scale"] = track_dataset["ai_transform"][0]
+        file.attrs["ai_transform_min_xy"] = track_dataset["ai_transform"][1]
+        file.attrs["ai_transform_pad"] = track_dataset["ai_transform"][2]
 
 
 def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
@@ -228,11 +228,6 @@ def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
     if not os.path.isdir(track_path):
         print("no track found")
         return
-    
-    # kn5_path = find_kn5_file(track_path, track_name)
-    # if not kn5_path:
-    #     print(f"No KN5 file for {track_name}, skipping...")
-    #     return
 
     layouts = find_ai_files(track_path)
     if not layouts:
@@ -245,8 +240,7 @@ def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
     for i, (fast_path, ideal_path) in enumerate(layouts):
         layout_dir = os.path.dirname(os.path.dirname(ideal_path))
         layout_name = os.path.basename(layout_dir)
-        output_filename = f"{track_name}_{layout_name}_Processed_Data.csv"
-        output_path = os.path.join(output_root, output_filename)
+        output_filename = f"{track_name}_{layout_name}_Processed_Data.h5py"
 
         image_path = None
         if os.path.isfile(os.path.join(layout_dir, "map.png")):
@@ -260,64 +254,109 @@ def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
 
         try:
             fast_df = parse_ideal_line(fast_path)
-            print("Got here! 1")
             track_dict = process_track_image_two_electric_boogaloo(image_path, target_size=target_size)
-            print("Got here! 2")
-            ai_trans = transform_ai_positions(fast_df["x"], fast_df["y"], track_dict["scale"], track_dict["min_xy"], track_dict["pad"])
-            print("Got here! 3")
-            aligned = align_ai_and_center(track_dict["center"], ai_trans, fast_df)
-            print("Got here! 4")
+            ai_trans, ai_scale, ai_min_xy, ai_pad = normalize_ai(fast_df["x"], fast_df["z"], target_size=target_size)
+            aligned_ai, new_center, patch_idx = align_ai_and_center(track_dict["center"], ai_trans, fast_df)
+            
+            patches = track_dict["patches"][patch_idx]
+        
+            track_dataset = {
+                #track information
+                "inner"          : track_dict["inner"], #normalized inner line
+                "outer"          : track_dict["outer"], #normalied outer line
+                "center"         : new_center,          #generated center line
+                "track_image"    : track_dict["track_image"], #track image of target size
+                "track_patches"  : patches,              #track patches per center point, 64x64
+                "track_transform": (track_dict["scale"], track_dict["min_xy"], track_dict["pad"]), #
+                #ai information
+                "ai_df"       : aligned_ai,
+                "ai_norm"     : ai_trans,
+                "ai_transform": (ai_scale, ai_min_xy, ai_pad),
+            }
 
-            print(aligned)
-            import matplotlib.pyplot as plt
-
-            #temp visual code
-            track_image = track_dict["track_image"]
-            plt.imshow(track_image, cmap='gray')
-            plt.xlim(0, track_image.shape[1])
-            plt.ylim(track_image.shape[1], 0)
-            plt.plot(track_dict["center"][:, 0], track_dict["center"][:, 1], linestyle=":", color="red")
-            plt.plot(aligned["x"][:,0], aligned["z"][:,1], linestyle=":", color="green")
-
-            plt.show()
-
-
-
-            #aligned has the df that has all the data points from fast_df aligned to the centerline.
-
-
-
+            save_track_data_as_hdf5(track_dataset, output_filename, output_root)
 
         except Exception as e:
             print(f"Failed to process {layout_name}: {e}")
 
 
-process_track("monaco", "./data/test/track", "./", (1024,1024))
+
+def restore_scale(ai_normed, scale, min_xy, pad):
+    ai_unpadded = ai_normed - pad
+    ai_original = ai_unpadded / scale + min_xy
+    return ai_original
+
+'''
+load_track_dataset
+
+should be global in some way. use this when training
+
+'''
+def load_track_dataset(file_path):
+    with h5py.File(file_path, "r") as file:
+        # Load edges and image
+        inner = file["inner_edge"][:]
+        outer = file["outer_edge"][:]
+        center = file["centerline"][:]
+        track_image = file["track_image"][:]
+        track_patches = file["track_patches"][:]
+        ai_norm = file["ai_norm"][:]
+
+        track_transform = (
+            file.attrs["track_transform_scale"],
+            file.attrs["track_transform_min_xy"],
+            file.attrs["track_transform_pad"]
+        )
+
+        ai_transform = (
+            file.attrs["ai_transform_scale"],
+            file.attrs["ai_transform_min_xy"],
+            file.attrs["ai_transform_pad"]
+        )
+
+        ai_df = pd.DataFrame({
+            key.split("/")[-1]: file[f"ai_df/{key.split('/')[-1]}"][:]
+            for key in file["ai_df"]
+        })
+
+    return {
+        "inner": inner,
+        "outer": outer,
+        "center": center,
+        "track_image": track_image,
+        "track_patches": track_patches,
+        "track_tranform": track_transform,
+        "ai_transform": ai_transform,
+        "ai_df": ai_df,
+        "ai_norm": ai_norm,
+    }
 
 
-# p_trk_img = process_track_image_two_electric_boogaloo("./data/testing_layouts/images/ks_barcelona_layout_gp.png", (512,512))
-
-# import matplotlib.pyplot as plt
-
-# track_image = p_trk_img["track_image"]
-# plt.imshow(track_image, cmap='gray')
-# plt.xlim(0, track_image.shape[1])
-# plt.ylim(track_image.shape[1], 0)
-# plt.plot(p_trk_img["center"][:, 0], p_trk_img["center"][:, 1], linestyle=":", color="red")
-# plt.show()
-
-# patches = p_trk_img["patches"]
+def load_all_files(file_path):
+    tracks = []
+    for track in os.listdir(file_path):
+        track = file_path + "/" + track
+        tracks.append(load_track_dataset(track))
+    return tracks
 
 
-# rand = np.random.choice(len(patches), size=5, replace=False)
 
-# fig, axes = plt.subplots(1, 5, figsize=(15,3))
-# for i, idx in enumerate(rand):
-#     ax = axes[i]
-#     img = patches[idx]
-#     ax.imshow(img, cmap='gray')
-#     ax.axis('off')
+def process_all_tracks(tracks_root, output_root, target_size = (1024,1024)):
+    for track_name in os.listdir(tracks_root):
+        process_track(track_name, tracks_root, output_root, target_size=target_size)
+    print("Finished all tracks")
 
-# plt.tight_layout()
-# plt.show()
 
+# import time
+
+# start = time.perf_counter()
+# process_track("monaco", "./data/test/track", "./",)
+# elapsed = time.perf_counter() - start
+# print(elapsed)
+
+
+# import time
+# start = time.perf_counter()
+# process_all_tracks("./data/processed_tracks", "./data/electricboogaloo")
+# elapsed = time.perf_counter() - start
+# print(elapsed)
