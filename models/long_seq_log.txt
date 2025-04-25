@@ -1,0 +1,6 @@
+Per-Feature Accuracy (%):
+------------------------------------------------------------
+               x:  95.40% (layout-based)     0.00% (train-scale)
+               y:  93.51% (layout-based)     0.00% (train-scale)
+               z:  94.89% (layout-based)     0.00% (train-scale)
+Mean X/Z spatial error: 79.79m, Max: 498.04m
