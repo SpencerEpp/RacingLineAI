@@ -67,6 +67,47 @@ def load_model(path, device):
     model.to(cfg["device"])
     return model, cfg, scaler_x, scaler_y
 
+def add_contextual_features(df):
+    coords = df[["left_x", "left_y", "left_z", "right_x", "right_y", "right_z"]].values
+    left = coords[:, :3]
+    right = coords[:, 3:]
+
+    # === Centerline & heading ===
+    center = (left + right) / 2
+    heading = np.diff(center, axis=0, prepend=center[0:1])
+    heading = heading / (np.linalg.norm(heading, axis=1, keepdims=True) + 1e-8)
+
+    # === Cumulative distance along centerline ===
+    distances = np.linalg.norm(np.diff(center, axis=0, prepend=center[0:1]), axis=1)
+    cumulative_distance = np.cumsum(distances)
+
+    # === Curvature ===
+    dd = np.diff(heading, axis=0, prepend=heading[0:1])
+    curvature = np.linalg.norm(dd, axis=1)
+
+    # === Track-level metadata ===
+    avg_width = np.mean(np.linalg.norm(left - right, axis=1))
+    max_width = np.max(np.linalg.norm(left - right, axis=1))
+    min_width = np.min(np.linalg.norm(left - right, axis=1))
+    total_length = cumulative_distance[-1]
+    avg_curvature = np.mean(curvature)
+    max_curvature = np.max(curvature)
+
+    # === Append as new columns ===
+    df["distance"] = cumulative_distance
+    df["heading_x"], df["heading_y"], df["heading_z"] = heading.T
+    df["curvature"] = curvature
+
+    # === Append constant metadata to all rows ===
+    df["track_avg_width"] = avg_width
+    df["track_min_width"] = min_width
+    df["track_max_width"] = max_width
+    df["track_total_length"] = total_length
+    df["track_avg_curvature"] = avg_curvature
+    df["track_max_curvature"] = max_curvature
+
+    return df
+
 def is_circular_track(df, input_cols, threshold=5.0):
     start = df[input_cols].iloc[0].values
     end = df[input_cols].iloc[-1].values
@@ -219,11 +260,10 @@ def get_racing_line(data_dir, data_type, model_path):
             case _:
                 raise ValueError(f"Unknown data type: {data_type} - use 'image' or 'coords'.")
         
+        df = add_contextual_features(df)
         is_circular = is_circular_track(df, config["input_cols"])
-        print(f"Track is circular: {is_circular}")
-        X_scaled = df[config["input_cols"]].values
-        # X = df[config["input_cols"]].values
-        # # X_scaled = scaler_x.transform(X)
+        X = df[config["input_cols"]].values
+        X_scaled = scaler_x.transform(X)
         n = len(X_scaled)
         preds_real = []
             
@@ -233,13 +273,12 @@ def get_racing_line(data_dir, data_type, model_path):
 
             with torch.no_grad():
                 pred_scaled = model(X_tensor).cpu().squeeze().numpy()
-            #     pred_real = scaler_y.inverse_transform(pred_scaled.reshape(1, -1))[0]
-            # preds_real.append(pred_real)
-            preds_real.append(pred_scaled)
+                pred_real = scaler_y.inverse_transform(pred_scaled.reshape(1, -1))[0]
+            preds_real.append(pred_real)
         
         preds_real = np.array(preds_real)
-        left_x, left_z = X_scaled[:, 0], X_scaled[:, 2]
-        right_x, right_z = X_scaled[:, 3], X_scaled[:, 5]
+        left_x, left_z = X[:, 0], X[:, 2]
+        right_x, right_z = X[:, 3], X[:, 5]
         plt.figure(figsize=(12, 6))
         if data_type == "image":
             plt.imshow(img, extent=[left_x.min(), right_x.max(), left_z.max(), left_z.min()])
