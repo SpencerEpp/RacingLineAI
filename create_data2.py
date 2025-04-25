@@ -189,24 +189,46 @@ unique_idx: unique centerline indexes. Used to remove excess patches.
 def align_ai_and_center(center, patches, ai_normed, ai_df):
     print(f"lc: {len(center)}, lp: {len(patches)}, ai_df: {len(ai_df)}")
     diff = len(center) - len(ai_df)
+    # if diff >= 0:
+    #     ai_tree = KDTree(ai_normed)
+    #     distances, indices = ai_tree.query(center)
+
+    # elif diff < 0:
+    #     cent_tree = KDTree(center)
+    #     distances, indices = cent_tree.query(ai_normed)
+    
+    # _, unique_idx = np.unique(indices, return_index=True)
+
+    # final_center = center[indices[unique_idx]]
+    # final_patches= patches[indices[unique_idx]]
+    # final_ai_df = ai_df.iloc[indices[unique_idx]].reset_index(drop=True)
+    # final_ai_normed = ai_normed[indices[unique_idx]]
+    
+    # #final_center = center[indices]
+    # # final_center = center
+    # # final_ai = ai_df.iloc[indices].reset_index(drop=True)
+
     if diff >= 0:
+        # More centers → query ai_tree with centers
         ai_tree = KDTree(ai_normed)
         distances, indices = ai_tree.query(center)
+        _, unique_idx = np.unique(indices, return_index=True)
 
-    elif diff < 0:
-        cent_tree = KDTree(center)
-        distances, indices = cent_tree.query(ai_normed)
-    
-    _, unique_idx = np.unique(indices, return_index=True)
+        final_center = center[unique_idx]
+        final_patches = patches[unique_idx]
+        final_ai_df = ai_df.iloc[indices[unique_idx]].reset_index(drop=True)
+        final_ai_normed = ai_normed[indices[unique_idx]]
 
-    final_center = center[indices[unique_idx]]
-    final_patches= patches[indices[unique_idx]]
-    final_ai_df = ai_df.iloc[indices[unique_idx]].reset_index(drop=True)
-    final_ai_normed = ai_normed[indices[unique_idx]]
-    
-    #final_center = center[indices]
-    # final_center = center
-    # final_ai = ai_df.iloc[indices].reset_index(drop=True)
+    else:
+        # More ai points → query center_tree with ai points
+        center_tree = KDTree(center)
+        distances, indices = center_tree.query(ai_normed)
+        _, unique_idx = np.unique(indices, return_index=True)
+
+        final_center = center[indices[unique_idx]]
+        final_patches = patches[indices[unique_idx]]
+        final_ai_df = ai_df.iloc[unique_idx].reset_index(drop=True)
+        final_ai_normed = ai_normed[unique_idx]
 
     return final_ai_df, final_ai_normed, final_center, final_patches
 
@@ -383,8 +405,8 @@ def process_all_tracks(tracks_root, output_root, target_size = (1024,1024)):
 # print(elapsed)
 
 
-import time
-start = time.perf_counter()
-process_all_tracks("./data/processed_tracks", "./data/electricboogaloo")
-elapsed = time.perf_counter() - start
-print(elapsed)
+# import time
+# start = time.perf_counter()
+# process_all_tracks("./data/processed_tracks", "./data/electricboogaloo")
+# elapsed = time.perf_counter() - start
+# print(elapsed)
