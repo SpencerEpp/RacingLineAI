@@ -186,15 +186,29 @@ final_ai: the final ai_df with the matched coordinates
 final_center: updated centerline dots (duplicates removed)
 unique_idx: unique centerline indexes. Used to remove excess patches.
 '''
-def align_ai_and_center(center, ai_normed, ai_df):
-    ai_tree = KDTree(ai_normed)
-    distances, indices = ai_tree.query(center)
+def align_ai_and_center(center, patches, ai_normed, ai_df):
+    print(f"lc: {len(center)}, lp: {len(patches)}, ai_df: {len(ai_df)}")
+    diff = len(center) - len(ai_df)
+    if diff >= 0:
+        ai_tree = KDTree(ai_normed)
+        distances, indices = ai_tree.query(center)
+
+    elif diff < 0:
+        cent_tree = KDTree(center)
+        distances, indices = cent_tree.query(ai_normed)
     
     _, unique_idx = np.unique(indices, return_index=True)
-    final_center = center[unique_idx]
-    final_ai = ai_df.iloc[indices[unique_idx]].reset_index(drop=True)
+
+    final_center = center[indices[unique_idx]]
+    final_patches= patches[indices[unique_idx]]
+    final_ai_df = ai_df.iloc[indices[unique_idx]].reset_index(drop=True)
+    final_ai_normed = ai_normed[indices[unique_idx]]
     
-    return final_ai, final_center, unique_idx
+    #final_center = center[indices]
+    # final_center = center
+    # final_ai = ai_df.iloc[indices].reset_index(drop=True)
+
+    return final_ai_df, final_ai_normed, final_center, final_patches
 
 
 def save_track_data_as_hdf5(track_dataset, filename, save_dir):
@@ -256,10 +270,24 @@ def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
             fast_df = parse_ideal_line(fast_path)
             track_dict = process_track_image_two_electric_boogaloo(image_path, target_size=target_size)
             ai_trans, ai_scale, ai_min_xy, ai_pad = normalize_ai(fast_df["x"], fast_df["z"], target_size=target_size)
-            aligned_ai, new_center, patch_idx = align_ai_and_center(track_dict["center"], ai_trans, fast_df)
+            aligned_df, aligned_norm, new_center, patches = align_ai_and_center(track_dict["center"], track_dict["patches"],  ai_trans, fast_df)
             
-            patches = track_dict["patches"][patch_idx]
+            # print("a")
+            # #ai_trans = ai_trans[patch_idx]
+            # print('b')
+            # patches = track_dict["patches"][patch_idx]
+            # print('c')
+            #patches = track_dict["patches"]
         
+            import matplotlib.pyplot as plt
+
+            # plt.imshow(track_dict["track_image"], cmap="gray")
+            # plt.plot(track_dict["center"][:, 0], track_dict["center"][:, 1], color="green")
+            # plt.plot(new_center[:, 0], new_center[:, 1], 'r.')
+            # plt.plot(ai_trans[:, 0], ai_trans[:, 1], color="blue")
+            # plt.show()
+
+
             track_dataset = {
                 #track information
                 "inner"          : track_dict["inner"], #normalized inner line
@@ -269,8 +297,8 @@ def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
                 "track_patches"  : patches,              #track patches per center point, 64x64
                 "track_transform": (track_dict["scale"], track_dict["min_xy"], track_dict["pad"]), #
                 #ai information
-                "ai_df"       : aligned_ai,
-                "ai_norm"     : ai_trans,
+                "ai_df"       : aligned_df,
+                "ai_norm"     : aligned_norm,
                 "ai_transform": (ai_scale, ai_min_xy, ai_pad),
             }
 
@@ -355,8 +383,8 @@ def process_all_tracks(tracks_root, output_root, target_size = (1024,1024)):
 # print(elapsed)
 
 
-# import time
-# start = time.perf_counter()
-# process_all_tracks("./data/processed_tracks", "./data/electricboogaloo")
-# elapsed = time.perf_counter() - start
-# print(elapsed)
+import time
+start = time.perf_counter()
+process_all_tracks("./data/processed_tracks", "./data/electricboogaloo")
+elapsed = time.perf_counter() - start
+print(elapsed)
