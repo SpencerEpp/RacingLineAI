@@ -1,0 +1,129 @@
+Training complete. Model saved to ./models/test.pt
+
+=== Per-Layout Validation Error ===
+ks_highlands_layout_long_Processed_Data.csv  Mean: 0.3423  Max: 0.5960
+ks_black_cat_county_layout_long_Processed_Data.csv  Mean: 0.1707  Max: 0.4406
+monza_monza_Processed_Data.csv            Mean: 0.1469  Max: 0.3632
+ks_red_bull_ring_layout_gp_Processed_Data.csv  Mean: 0.0859  Max: 0.2308
+pukekohe_park2013_pukekohe_park2013_Processed_Data.csv  Mean: 0.0821  Max: 0.1327
+rt_sebring_raceday_Processed_Data.csv     Mean: 0.0816  Max: 0.1581
+acf_buenos_aires_layout_no_12_Processed_Data.csv  Mean: 0.0798  Max: 0.1779
+zw_midohio_nc_Processed_Data.csv          Mean: 0.0772  Max: 0.1467
+daytona_2017_roadcourse_Processed_Data.csv  Mean: 0.0763  Max: 0.2444
+aa_ims_indyloco_Processed_Data.csv        Mean: 0.0744  Max: 0.1353
+ks_red_bull_ring_layout_national_Processed_Data.csv  Mean: 0.0708  Max: 0.1418
+ks_barcelona_layout_moto_Processed_Data.csv  Mean: 0.0673  Max: 0.1488
+daytona_2017_oval_Processed_Data.csv      Mean: 0.0625  Max: 0.2209
+aa_homestead_roval_r_Processed_Data.csv   Mean: 0.0576  Max: 0.1243
+rt_oulton_park_fosters_Processed_Data.csv  Mean: 0.0519  Max: 0.1227
+aa_homestead_oval_Processed_Data.csv      Mean: 0.0378  Max: 0.0548
+rt_oulton_park_international_Processed_Data.csv  Mean: 0.0373  Max: 0.0850
+aa_ims_indymotogp_Processed_Data.csv      Mean: 0.0323  Max: 0.0600
+ascari_race_resort_full_Processed_Data.csv  Mean: 0.0322  Max: 0.1471
+lemans_2017_nochic_lights_Processed_Data.csv  Mean: 0.0322  Max: 0.1075
+eastern_creek2014_brabham_Processed_Data.csv  Mean: 0.0193  Max: 0.0604
+
+Baseline Val Loss: 0.3352
+
+=== Input Ablation Results ===
+left_x                Loss: 0.3966  ΔLoss: 0.0614
+right_y               Loss: 0.3858  ΔLoss: 0.0506
+left_y                Loss: 0.3763  ΔLoss: 0.0411
+right_x               Loss: 0.3676  ΔLoss: 0.0324
+heading_y             Loss: 0.3394  ΔLoss: 0.0042
+distance              Loss: 0.3362  ΔLoss: 0.0009
+curvature             Loss: 0.3345  ΔLoss: -0.0007
+heading_z             Loss: 0.3289  ΔLoss: -0.0063
+heading_x             Loss: 0.3228  ΔLoss: -0.0124
+right_z               Loss: 0.3225  ΔLoss: -0.0127
+left_z                Loss: 0.3098  ΔLoss: -0.0255
+
+=== Profiler Summary ===
+Run Inference             | Total: 0.00s | Calls: 0 | Avg: 0.0000s
+Gathering Files and Split | Total: 0.00s | Calls: 1 | Avg: 0.0016s
+Create Train Dataset      | Total: 3.40s | Calls: 1 | Avg: 3.4035s
+Add Contextual Features   | Total: 0.30s | Calls: 231 | Avg: 0.0013s
+Is Track Circular         | Total: 0.08s | Calls: 126 | Avg: 0.0006s
+Create Val Dataset        | Total: 0.79s | Calls: 1 | Avg: 0.7867s
+Dataset __len__           | Total: 0.00s | Calls: 25 | Avg: 0.0000s
+Create DataLoaders        | Total: 0.00s | Calls: 1 | Avg: 0.0002s
+Init Model                | Total: 0.11s | Calls: 1 | Avg: 0.1133s
+Train Model               | Total: 743.77s | Calls: 1 | Avg: 743.7702s
+Dataset __getitem__       | Total: 246.95s | Calls: 3686091 | Avg: 0.0001s
+Get Centered Sequences    | Total: 114.92s | Calls: 3757113 | Avg: 0.0000s
+to_device                 | Total: 0.73s | Calls: 1790 | Avg: 0.0004s
+forward                   | Total: 2.28s | Calls: 1790 | Avg: 0.0013s
+Euclidean Loss            | Total: 0.66s | Calls: 7211 | Avg: 0.0001s
+backward                  | Total: 6.72s | Calls: 1790 | Avg: 0.0038s
+step                      | Total: 3.05s | Calls: 1790 | Avg: 0.0017s
+Evaluate Model            | Total: 678.44s | Calls: 13 | Avg: 52.1877s
+Save Model                | Total: 0.01s | Calls: 1 | Avg: 0.0118s
+Evaluate On Val Set       | Total: 266.68s | Calls: 1 | Avg: 266.6779s
+Input Ablation            | Total: 804.91s | Calls: 1 | Avg: 804.9081s
+
+
+
+
+
+Results after Dataset change
+
+Training complete. Model saved to ./models/test.pt
+
+=== Per-Layout Validation Error ===
+ks_highlands_layout_long_Processed_Data.csv  Mean: 0.3423  Max: 0.5960
+ks_black_cat_county_layout_long_Processed_Data.csv  Mean: 0.1707  Max: 0.4406
+monza_monza_Processed_Data.csv            Mean: 0.1469  Max: 0.3632
+ks_red_bull_ring_layout_gp_Processed_Data.csv  Mean: 0.0859  Max: 0.2308
+pukekohe_park2013_pukekohe_park2013_Processed_Data.csv  Mean: 0.0821  Max: 0.1327
+rt_sebring_raceday_Processed_Data.csv     Mean: 0.0816  Max: 0.1581
+acf_buenos_aires_layout_no_12_Processed_Data.csv  Mean: 0.0798  Max: 0.1779
+zw_midohio_nc_Processed_Data.csv          Mean: 0.0772  Max: 0.1467
+daytona_2017_roadcourse_Processed_Data.csv  Mean: 0.0763  Max: 0.2444
+aa_ims_indyloco_Processed_Data.csv        Mean: 0.0744  Max: 0.1353
+ks_red_bull_ring_layout_national_Processed_Data.csv  Mean: 0.0708  Max: 0.1418
+ks_barcelona_layout_moto_Processed_Data.csv  Mean: 0.0673  Max: 0.1488
+daytona_2017_oval_Processed_Data.csv      Mean: 0.0625  Max: 0.2209
+aa_homestead_roval_r_Processed_Data.csv   Mean: 0.0576  Max: 0.1243
+rt_oulton_park_fosters_Processed_Data.csv  Mean: 0.0519  Max: 0.1227
+aa_homestead_oval_Processed_Data.csv      Mean: 0.0378  Max: 0.0548
+rt_oulton_park_international_Processed_Data.csv  Mean: 0.0373  Max: 0.0850
+aa_ims_indymotogp_Processed_Data.csv      Mean: 0.0323  Max: 0.0600
+ascari_race_resort_full_Processed_Data.csv  Mean: 0.0322  Max: 0.1471
+lemans_2017_nochic_lights_Processed_Data.csv  Mean: 0.0322  Max: 0.1075
+eastern_creek2014_brabham_Processed_Data.csv  Mean: 0.0193  Max: 0.0604
+
+Baseline Val Loss: 0.3352
+
+=== Input Ablation Results ===
+left_x                Loss: 0.3966  ΔLoss: 0.0614
+right_y               Loss: 0.3858  ΔLoss: 0.0506
+left_y                Loss: 0.3763  ΔLoss: 0.0411
+right_x               Loss: 0.3676  ΔLoss: 0.0324
+heading_y             Loss: 0.3394  ΔLoss: 0.0042
+distance              Loss: 0.3362  ΔLoss: 0.0009
+curvature             Loss: 0.3345  ΔLoss: -0.0007
+heading_z             Loss: 0.3289  ΔLoss: -0.0063
+heading_x             Loss: 0.3228  ΔLoss: -0.0124
+right_z               Loss: 0.3225  ΔLoss: -0.0127
+left_z                Loss: 0.3098  ΔLoss: -0.0255
+
+=== Profiler Summary ===
+Run Inference             | Total: 0.00s | Calls: 0 | Avg: 0.0000s
+Gathering Files and Split | Total: 0.00s | Calls: 1 | Avg: 0.0020s
+Create Train Dataset      | Total: 22.43s | Calls: 1 | Avg: 22.4260s
+Add Contextual Features   | Total: 0.42s | Calls: 336 | Avg: 0.0013s
+Is Track Circular         | Total: 0.07s | Calls: 126 | Avg: 0.0006s
+Get Centered Sequences    | Total: 12.63s | Calls: 447455 | Avg: 0.0000s
+Create Val Dataset        | Total: 5.17s | Calls: 1 | Avg: 5.1659s
+Create DataLoaders        | Total: 0.00s | Calls: 1 | Avg: 0.0007s
+Init Model                | Total: 0.34s | Calls: 1 | Avg: 0.3400s
+Train Model               | Total: 671.64s | Calls: 1 | Avg: 671.6364s
+to_device                 | Total: 1.42s | Calls: 1790 | Avg: 0.0008s
+forward                   | Total: 2.39s | Calls: 1790 | Avg: 0.0013s
+Euclidean Loss            | Total: 0.73s | Calls: 7211 | Avg: 0.0001s
+backward                  | Total: 6.03s | Calls: 1790 | Avg: 0.0034s
+step                      | Total: 2.70s | Calls: 1790 | Avg: 0.0015s
+Evaluate Model            | Total: 686.16s | Calls: 13 | Avg: 52.7819s
+Save Model                | Total: 0.02s | Calls: 1 | Avg: 0.0151s
+Evaluate On Val Set       | Total: 279.98s | Calls: 1 | Avg: 279.9830s
+Input Ablation            | Total: 670.11s | Calls: 1 | Avg: 670.1085s
