@@ -7,7 +7,7 @@ import os
 import numpy as np
 import torch as t
 from torch.utils.data import Dataset, DataLoader, random_split
-import tqdm.auto as tqdm
+from tqdm.auto import tqdm
 from create_data2 import load_all_files, process_track_image_two_electric_boogaloo as process_track, process_all_tracks
 
 ''' TrackDataset
@@ -26,7 +26,7 @@ class TrackDataset(Dataset):
        # self.metaidx      = []
 
 
-        for index, track in tqdm(enumerate(self.tracks), desc="Loading Tracks"):
+        for index, track in tqdm(enumerate(self.tracks), desc="Loading Tracks", total=len(self.tracks)):
             self.center.extend(track["center"])
             patches_np = np.array(track["track_patches"])          
             self.patches.extend(patches_np)
