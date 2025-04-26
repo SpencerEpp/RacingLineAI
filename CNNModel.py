@@ -103,7 +103,7 @@ class RoboTurbosky(t.nn.Module):
             t.nn.Linear(position_head_dim, 2)
         )
 
-    def forward(self, patch, coord, meta=None):
+    def forward(self, patch, coord, meta):
         x_patch = self.cnn(patch)
         x_coord = self.coord(coord)
         x_meta = self.meta(meta)

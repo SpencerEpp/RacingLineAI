@@ -112,7 +112,7 @@ def evaluate_model(model, dataloader, pos_crit, cont_crit):
         for inputs, targets in dataloader:
             inputs = {k: v.cuda(non_blocking=True) for k, v in inputs.items()}
             targets = {k: v.cuda(non_blocking=True) for k, v in targets.items()}
-            control_pred, position_pred = model(inputs["patch"].unsqueeze(1), inputs["center"])
+            control_pred, position_pred = model(inputs["patch"].unsqueeze(1), inputs["center"], inputs["metadata"])
             loss = cont_crit(control_pred, targets) + pos_crit(position_pred, targets)
             total_loss += loss.item()
     return total_loss / len(dataloader)
@@ -227,21 +227,23 @@ def run_input_ablation(device, model, val_loader):
                      "track_avg_width", "track_min_width", "track_max_width",
                      "track_total_length", "track_avg_curvature", "track_max_curvature"]
 
-    if len(feature_names) == 0:
-        print("No contextual features defined yet. Skipping input ablation.")
-        return
+    val_loader_copy = t.utils.data.DataLoader(
+        val_loader.dataset,
+        batch_size=val_loader.batch_size,
+        shuffle=val_loader.shuffle if hasattr(val_loader, 'shuffle') else False,
+        num_workers=val_loader.num_workers,
+        pin_memory=val_loader.pin_memory,
+    )
 
-    start_feature_idx = 2  # Skip image
     ablation_results = []
-
-    for feature_idx, feature_name in enumerate(feature_names, start=start_feature_idx):
+    for idx, feature_name in tqdm(enumerate(feature_names), total=len(feature_names)):
         running_loss = 0.0
         with t.inference_mode():
-            for inputs, targets in val_loader:
+            for inputs, targets in val_loader_copy:
                 inputs = {k: v.clone().to(device) for k, v in inputs.items()}
-                targets = {k: v.clone().to(device) for k, v in targets.items()}
-                inputs["center"][:, feature_idx] = 0.0
-                control_pred, position_pred = model(inputs["patch"].unsqueeze(1), inputs["center"])
+                targets = {k: v.clone().to(device) for k, v in targets.items()}              
+                inputs["metadata"][idx] = 0.0
+                control_pred, position_pred = model(inputs["patch"].unsqueeze(1), inputs["center"], inputs["metadata"])
                 loss = cont_crit(control_pred, targets) + pos_crit(position_pred, targets)
                 running_loss += loss.item()
 

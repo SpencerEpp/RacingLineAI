@@ -7,3 +7,4 @@ venv/
 **/data/assetto_corsa_tracks/
 **/data/already_processed_tracks
 **/data/lstm_extracted_track_data/lstm_testing_layouts/F1_2024
+**/data/processed_tracks.zip
