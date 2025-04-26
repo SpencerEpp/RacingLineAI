@@ -53,6 +53,7 @@ class PositionLoss(t.nn.Module):
         super(PositionLoss, self).__init__()
         self.mse_loss = t.nn.MSELoss()
 
+    @profiled(profiler, "Position Loss")
     def forward(self, predicted, targets):
         return self.mse_loss(predicted, targets["ai_norm"])
 
@@ -71,7 +72,8 @@ class ControlLoss(t.nn.Module):
     def __init__(self, weight=1.0):
         super(ControlLoss, self).__init__()
         self.mse_loss = t.nn.MSELoss()
-        
+    
+    @profiled(profiler, "Control Loss")
     def forward(self, predicted, targets):
         predicted_speed = predicted[:, 0]
         predicted_gas = predicted[:, 1]
@@ -149,14 +151,26 @@ def train_model(model, train_loader, val_loader, config):
         running_loss = 0
         pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{config['epochs']}", leave=False)
         for inputs, targets in pbar:
+
+            profiler.start("to_device")
             inputs = {k: v.cuda(non_blocking=True) for k, v in inputs.items()}
             targets = {k: v.cuda(non_blocking=True) for k, v in targets.items()}
+            profiler.stop("to_device")
 
-            optimizer.zero_grad()
+            profiler.start("forward")
             control_pred, position_pred = model(inputs["patch"].unsqueeze(1), inputs["center"], inputs["metadata"])
             loss = cont_crit(control_pred, targets) + pos_crit(position_pred, targets)
+            profiler.stop("forward")
+
+            profiler.start("backward")
+            optimizer.zero_grad()
             loss.backward()
+            profiler.stop("backward")
+
+            profiler.start("step")
             optimizer.step()
+            profiler.stop("step")
+
             running_loss += loss.item()
             pbar.set_postfix({"Loss": running_loss / (pbar.n + 1)})
 
@@ -169,9 +183,11 @@ def train_model(model, train_loader, val_loader, config):
         val_losses.append(val_loss)
 
         if val_loss < best_val_loss:
+            profiler.start("saving model")
             best_val_loss = val_loss
             save_model(model, config)
             epochs_without_improvement = 0
+            profiler.start("saving model")
         else:
             epochs_without_improvement += 1
 
@@ -223,7 +239,7 @@ def run_input_ablation(device, model, val_loader):
     base_loss = evaluate_model(model, val_loader, pos_crit, cont_crit)
     print(f"\nBaseline Validation Loss: {base_loss:.4f}\n")
 
-    feature_names = ["distance", "heading_x", "heading_z", "curvature", "track_widths"
+    feature_names = ["distance", "heading_x", "heading_z", "curvature", "track_widths",
                      "track_avg_width", "track_min_width", "track_max_width",
                      "track_total_length", "track_avg_curvature", "track_max_curvature"]
 
@@ -236,7 +252,7 @@ def run_input_ablation(device, model, val_loader):
     )
 
     ablation_results = []
-    for idx, feature_name in tqdm(enumerate(feature_names), total=len(feature_names)):
+    for idx, feature_name in tqdm(enumerate(feature_names), total=len(feature_names), desc="Ablation"):
         running_loss = 0.0
         with t.inference_mode():
             for inputs, targets in val_loader_copy:
@@ -268,13 +284,22 @@ def run_input_ablation(device, model, val_loader):
         None
 """
 def run_pipeline(config):
+    print("Preparing dataset...")
+    profiler.start("Gathering Files and Split")
     train_loader, val_loader = CNNDataManager.load_training_dataset(
         config["dataset_dir"], config["device"], config["split_ratio"], batch_size=config["batch_size"], seed=config["seed"]
     )
+    profiler.stop("Gathering Files and Split")
+    print("Total sequences loaded:", (len(train_loader)+len(val_loader)))
 
+    print(f"Initializing model...")
+    profiler.start("Init Model")
     model = RoboTurbosky(config).to(config["device"])
+    profiler.stop("Init Model")
 
+    print("Training started...")
     train_losses, val_losses = train_model(model, train_loader, val_loader, config)
+    print(f"Training complete. Model saved to {config['model_save_path']}")
 
     model, cfg = load_model(config["model_save_path"], device=config["device"])
     evaluate_on_val_set(model, val_loader)
@@ -291,95 +316,3 @@ def run_pipeline(config):
     plt.grid(True)
     plt.legend()
     plt.show()
-
-
-
-
-
-
-
-
-
-
-# import torch as t
-# import numpy as np
-
-# from tqdm.notebook import tqdm
-# import matplotlib.pyplot as plt
-# import CNNDataManager
-
-# from torch.utils.data import DataLoader
-
-# from CNNModel import RoboTurbosky, save_model
-
-
-
-
-# class PositionLoss(t.nn.Module):
-#     def __init__(self, weight=1.0):
-#         super(PositionLoss, self).__init__()
-#         self.mse_loss = t.nn.MSELoss()
-
-#     def forward(self, predicted, targets):
-#         loss = self.mse_loss(predicted, targets["ai_norm"])
-#         return loss
-
-# #we can add penalties to encourage smoother and more realistic driving here
-# class ControlLoss(t.nn.Module):
-#     def __init__(self, weight=1.0):
-#         super(ControlLoss, self).__init__()
-#         self.mse_loss = t.nn.MSELoss()
-        
-#     def forward(self, predicted, targets):
-#         precited_speed = predicted[:, 0]
-#         predicted_gas = predicted[:, 1]
-#         predicted_brake = predicted[:, 2]
-        
-        
-#         loss = (
-#             self.mse_loss(precited_speed, targets["ai_cont"][:, 0]) +
-#             self.mse_loss(predicted_gas, targets["ai_cont"][:, 1]) +
-#             self.mse_loss(predicted_brake, targets["ai_cont"][:, 2])
-#         )
-
-#         gas_penalty = t.clamp(predicted_gas - 1, min=0) + t.clamp(0 - predicted_gas, min=0)
-#         brake_penalty = t.clamp(predicted_brake - 1, min=0) + t.clamp(0 - predicted_brake, min=0)
-
-#         penalty = 10 * (gas_penalty.pow(2).mean() + brake_penalty.pow(2).mean())
-
-#         return loss + penalty
-    
-
-# def run_pipeline(config):
-#     device = config["device"]
-#     model = RoboTurbosky(config)
-#     model.to(device)
-#     pos_crit  = PositionLoss()
-#     cont_crit   = ControlLoss(weight=1.0)
-#     optimizer = t.optim.Adam(model.parameters(), lr=config["learning_rate"])
-
-#     train, val = CNNDataManager.load_training_dataset(config["dataset_dir"], 
-#                                                     config["device"], 
-#                                                     config["split_ratio"], 
-#                                                     batch_size=config["batch_size"], 
-#                                                     seed=config["seed"])
-
-#     for epoch in tqdm(range(config["epochs"]), desc="Training Progress"):
-        
-#         dataloader = tqdm(train, desc="Epoch Progress", leave=False)
-#         for inputs, outputs in dataloader:
-#             inputs = {k: v.to(device) for k,v in inputs.items()}
-#             outputs= {k: v.to(device) for k,v in outputs.items()}
-#             optimizer.zero_grad()
-#             p_cont, p_pos = model(inputs["patch"].unsqueeze(1), inputs["center"])
-#             loss =  (
-#                 cont_crit(p_cont, outputs) +
-#                 pos_crit(p_pos, outputs)
-#             )
-#             loss.backward()
-#             optimizer.step()
-#             dataloader.set_postfix({"Loss" : loss.item()})
-        
-#         save_model(model, config, temp_save = (config["model_save_path"] + "_temp_" + str(epoch)))
-    
-#     save_model(model, config)

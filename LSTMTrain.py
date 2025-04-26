@@ -178,10 +178,12 @@ def train_model(model, train_loader, val_loader, config, scaler_x=None, scaler_y
         scheduler.step(val_loss)
         
         if val_loss < best_val_loss:
+            profiler.start("saving model")
             best_val_loss = val_loss
             save_model(model, config, scaler_x, scaler_y, profiler=profiler)
             best_epoch = epoch+1
             epochs_without_improvement = 0
+            profiler.stop("saving model")
         else:
             epochs_without_improvement += 1
 
@@ -263,10 +265,12 @@ def train_model(model, train_loader, val_loader, config, scaler_x=None, scaler_y
 #         scheduler.step(val_loss)
 
 #         if val_loss < best_val_loss:
+#             profiler.start("saving model")
 #             best_val_loss = val_loss
 #             save_model(model, config, scaler_x, scaler_y, profiler=profiler)
 #             best_epoch = epoch + 1
 #             epochs_without_improvement = 0
+#             profiler.stop("saving model")
 #         else:
 #             epochs_without_improvement += 1
 
