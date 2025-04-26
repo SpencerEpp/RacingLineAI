@@ -46,7 +46,6 @@ from CNNCreateData import load_all_files, process_track_image, cnn_process_all_t
         ai_norm (torch.Tensor): Normalized AI behavior outputs.
         ai_df (torch.Tensor): Real-world AI driving targets (x, z, speed, gas, brake).
 """
-#TODO: do metaidx for track_normalization values.
 class TrackDataset(Dataset):
     def __init__(self, dataset_dir, device):
         self.tracks = load_all_files(dataset_dir)
@@ -88,6 +87,7 @@ class TrackDataset(Dataset):
         # self.patches.to(device)      
         # self.ai_norm.to(device)      
         # self.ai_df.to(device)
+        # self.metadata.to(device)
     
     def __len__(self):
         return len(self.center)
@@ -195,5 +195,3 @@ def create_inference_data(image_root):
 """
 def create_training_dataset(track_root, output_root):
     cnn_process_all_tracks(track_root, output_root)
-
-

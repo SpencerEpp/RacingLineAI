@@ -1,3 +1,35 @@
+#====================================================
+# Project: Racing Line AI
+# Authors: Spencer Epp, Samuel Trepac
+# Date:    March 23rd - April 28th
+#
+# Description:
+#     Provides functionality for processing racetrack images and AI racing line data
+#     into standardized datasets for CNN model training and inference.
+#
+# File Overview:
+#     This file includes:
+#       - Image preprocessing to extract and normalize track edges and centerlines.
+#       - Patch extraction for CNN input.
+#       - Contextual feature engineering (curvature, heading, width).
+#       - Alignment of game AI data to generated centerlines.
+#       - Saving and loading track datasets to/from HDF5 files.
+#       - Batch processing of multiple tracks and layouts.
+#
+# Functions Included:
+#     - process_track_image(): Process track map image into contours, centerline, patches, and metadata.
+#     - normalize_ai(): Normalize AI coordinate data to match track image dimensions.
+#     - align_ai_and_center(): Align AI ideal line data to generated centerline points.
+#     - save_track_data_as_hdf5(): Save processed track dataset to HDF5.
+#     - process_track(): End-to-end processing for a single track.
+#     - restore_scale(): Reverse normalization of AI coordinates.
+#     - load_track_dataset(): Load a single processed track from HDF5.
+#     - load_all_files(): Load all processed track files from a directory.
+#     - cnn_process_all_tracks(): Batch process all tracks from root directory.
+#====================================================
+
+
+# === Imports ===
 import os
 import cv2
 import pandas as pd
@@ -9,6 +41,25 @@ import h5py
 from ParseGameFiles import parse_ideal_line, find_ai_files
 
 
+"""
+    Process a track map image to extract contours, centerline, patches, and metadata.
+
+    Args:
+        image_path (str): Path to the track map image (expects transparency for mask).
+        target_size (tuple): Desired (width, height) of output image and normalized data.
+
+    Returns:
+        dict:
+            - inner (np.ndarray): Normalized inner contour.
+            - outer (np.ndarray): Normalized outer contour.
+            - center (np.ndarray): Resampled centerline coordinates.
+            - track_image (np.ndarray): Rendered binary track image (white track on black background).
+            - patches (np.ndarray): 64x64 patches centered on centerline points.
+            - scale (float): Scaling factor used during normalization.
+            - min_xy (np.ndarray): Minimum x, y coordinates before scaling.
+            - pad (np.ndarray): Padding applied after scaling.
+            - metadata (dict): Contextual track features (curvature, heading, width, etc.).
+"""
 def process_track_image(image_path, target_size=(256,256)):
 
     # === Load & Binarize Transparent Image ===
@@ -27,8 +78,7 @@ def process_track_image(image_path, target_size=(256,256)):
     outer = sorted_contours[0].squeeze()
     inner = sorted_contours[1].squeeze()
 
-
-    #helper function. Normalizes countours into a bounding box, and places it at (0,0)
+    # === Helper: Normalizes countours into a bounding box (places it at (0,0)) ===
     def normalize_contours(inner, outer, target_size=(256,256)):
         all_points = np.vstack((inner, outer))
         min_x, min_y = np.min(all_points, axis=0)
@@ -58,10 +108,9 @@ def process_track_image(image_path, target_size=(256,256)):
 
         return inner_centered, outer_centered, scale, np.array([min_x, min_y]), pad
     
-
     inner, outer, scale, min_xy, pad = normalize_contours(inner, outer, target_size=target_size)
     
-    #samples a centerline based on nearest-neighbour.
+    # === Helper: Samples a Centerline Based on Nearest-Neighbour ===
     def generate_centerline(inner, outer, spacing = 1, smoothing = True):  
         outer_tree = KDTree(outer)
         center_points = []
@@ -140,6 +189,12 @@ def process_track_image(image_path, target_size=(256,256)):
     patches = np.stack(patches)
 
 
+    '''Add Contextual Features
+    generates metadata like cumulative distance, heading, curvature, and 
+    track width from the centerline and edges.
+
+    Used to provide additional input features for models.
+    '''
     def add_contextual_features(inner, outer, center, profiler=None):
         if profiler: profiler.start("Add Contextual Features")
 
@@ -188,8 +243,6 @@ def process_track_image(image_path, target_size=(256,256)):
         if profiler: profiler.stop("Add Contextual Features")
         return meta
 
-   
-
     metadata = add_contextual_features(inner, outer, center)
     return {"inner"      : inner, 
             "outer"      : outer, 
@@ -203,6 +256,21 @@ def process_track_image(image_path, target_size=(256,256)):
             }
 
 
+"""
+    Normalize AI racing line coordinates to match the scaled track image dimensions.
+
+    Args:
+        ai_x (np.ndarray): Array of x coordinates from the AI line.
+        ai_z (np.ndarray): Array of z coordinates from the AI line.
+        target_size (tuple): Target size (width, height) for scaling.
+
+    Returns:
+        tuple:
+            - ai_padded (np.ndarray): Normalized and padded AI coordinates.
+            - scale (float): Scaling factor applied.
+            - min_xy (np.ndarray): Minimum x, y before scaling.
+            - pad (np.ndarray): Padding added after scaling.
+"""
 def normalize_ai(ai_x, ai_z, target_size=(256, 256)):
     ai_pos = np.stack([ai_x, ai_z], axis=1)
 
@@ -220,14 +288,22 @@ def normalize_ai(ai_x, ai_z, target_size=(256, 256)):
     return ai_padded, scale, min_xy, np.array([pad_x, pad_y])
 
 
-'''align_ai_and_center
-gets the ai information matching the generated center line.
+"""
+    Align AI line data with generated centerline points based on nearest neighbors.
 
-Returns the following:
-final_ai: the final ai_df with the matched coordinates
-final_center: updated centerline dots (duplicates removed)
-unique_idx: unique centerline indexes. Used to remove excess patches.
-'''
+    Args:
+        center (np.ndarray): Generated centerline coordinates.
+        patches (np.ndarray): Extracted patches corresponding to centerline points.
+        ai_normed (np.ndarray): Normalized AI coordinates.
+        ai_df (pandas.DataFrame): Original AI data (speeds, controls, etc.).
+
+    Returns:
+        tuple:
+            - final_ai_df (pandas.DataFrame): AI data aligned to centerline.
+            - final_ai_normed (np.ndarray): Normalized AI points aligned to centerline.
+            - final_center (np.ndarray): Updated centerline points.
+            - final_patches (np.ndarray): Patches corresponding to updated centerline.
+"""
 def align_ai_and_center(center, patches, ai_normed, ai_df):
     diff = len(center) - len(ai_df)
 
@@ -256,6 +332,17 @@ def align_ai_and_center(center, patches, ai_normed, ai_df):
     return final_ai_df, final_ai_normed, final_center, final_patches
 
 
+"""
+    Save a fully processed track dataset to an HDF5 file.
+
+    Args:
+        track_dataset (dict): Dictionary containing track data and metadata.
+        filename (str): Output filename for the HDF5 file.
+        save_dir (str): Directory to save the output file.
+
+    Returns:
+        None
+"""
 def save_track_data_as_hdf5(track_dataset, filename, save_dir):
     os.makedirs(save_dir, exist_ok=True)
     path = os.path.join(save_dir, filename)
@@ -286,6 +373,18 @@ def save_track_data_as_hdf5(track_dataset, filename, save_dir):
         file.attrs["ai_transform_pad"] = track_dataset["ai_transform"][2]
 
 
+"""
+    End-to-end processing of a single track and its layouts.
+
+    Args:
+        track_name (str): Name of the track directory.
+        tracks_root (str): Root directory containing all tracks.
+        output_root (str): Directory where processed data will be saved.
+        target_size (tuple): Target size for track normalization and patch generation.
+
+    Returns:
+        None
+"""
 def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
     track_path = os.path.join(tracks_root, track_name)
     print(track_path)
@@ -343,18 +442,43 @@ def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
             print(f"Failed to process {layout_name}: {e}")
 
 
+"""
+    Reverse the normalization and padding to recover original AI coordinates.
 
+    Args:
+        ai_normed (np.ndarray): Normalized and padded AI coordinates.
+        scale (float): Scaling factor originally applied.
+        min_xy (np.ndarray): Minimum x, y before scaling.
+        pad (np.ndarray): Padding added after scaling.
+
+    Returns:
+        np.ndarray: Restored AI coordinates in original space.
+"""
 def restore_scale(ai_normed, scale, min_xy, pad):
     ai_unpadded = ai_normed - pad
     ai_original = ai_unpadded / scale + min_xy
     return ai_original
 
-'''
-load_track_dataset
 
-should be global in some way. use this when training
+"""
+    Load a processed track dataset from an HDF5 file.
 
-'''
+    Args:
+        file_path (str): Path to the HDF5 file.
+
+    Returns:
+        dict:
+            - inner (np.ndarray): Inner contour points.
+            - outer (np.ndarray): Outer contour points.
+            - center (np.ndarray): Centerline points.
+            - track_image (np.ndarray): Rendered track image.
+            - track_patches (np.ndarray): Patches extracted around centerline points.
+            - track_transform (tuple): (scale, min_xy, pad) for track image.
+            - ai_transform (tuple): (scale, min_xy, pad) for AI coordinates.
+            - ai_df (pandas.DataFrame): DataFrame of AI controls and speeds.
+            - ai_norm (np.ndarray): Normalized AI coordinates.
+            - metadata (dict): Track feature metadata.
+"""
 def load_track_dataset(file_path):
     with h5py.File(file_path, "r") as file:
         # Load edges and image
@@ -402,32 +526,38 @@ def load_track_dataset(file_path):
     }
 
 
-# def load_all_files(file_path):
-#     tracks = []
-#     for track in os.listdir(file_path):
-#         track = file_path + "/" + track
-#         tracks.append(load_track_dataset(track))
-#     return tracks
+"""
+    Load all processed track datasets from a directory.
 
+    Args:
+        file_path (str): Directory containing processed track HDF5 files.
+
+    Returns:
+        list: List of track dataset dictionaries loaded from files.
+"""
 def load_all_files(file_path):
     tracks = []
     for track_name in os.listdir(file_path):
         full_path = os.path.join(file_path, track_name)
-        
-        # === Skip folders ===
         if not os.path.isfile(full_path):
             continue
-        
-        # === Skip non-h5 files (safety) ===
         if not (full_path.endswith(".h5") or full_path.endswith(".h5py")):
             continue
-        
         tracks.append(load_track_dataset(full_path))
-    
     return tracks
 
 
+"""
+    Batch process all tracks in the given root directory and save outputs.
 
+    Args:
+        tracks_root (str): Root directory containing raw track folders.
+        output_root (str): Directory where processed datasets will be saved.
+        target_size (tuple): Target size for track normalization and patch extraction.
+
+    Returns:
+        None
+"""
 def cnn_process_all_tracks(tracks_root, output_root, target_size = (1024,1024)):
     for track_name in os.listdir(tracks_root):
         process_track(track_name, tracks_root, output_root, target_size=target_size)
