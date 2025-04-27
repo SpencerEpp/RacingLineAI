@@ -185,7 +185,7 @@ def train_model(model, train_loader, val_loader, config):
         if val_loss < best_val_loss:
             profiler.start("saving model")
             best_val_loss = val_loss
-            save_model(model, config)
+            save_model(model, config, temp_save=(f"{config['model_save_path']}_{val_loss:.2f}.pt"))
             epochs_without_improvement = 0
             profiler.start("saving model")
         else:
@@ -196,7 +196,8 @@ def train_model(model, train_loader, val_loader, config):
         if epochs_without_improvement >= early_stopping_patience:
             print(f"Early stopping triggered at epoch {epoch+1}.")
             break
-
+    
+    save_model(model, config)
     return train_losses, val_losses
 
 
@@ -312,7 +313,7 @@ def run_pipeline(config):
     plt.plot(val_losses, label="Validation Loss")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.xlim(0, 100)
+    plt.ylim(0, 100)
     plt.title("CNN Learning Curve")
     plt.grid(True)
     plt.legend()
