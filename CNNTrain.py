@@ -312,6 +312,7 @@ def run_pipeline(config):
     plt.plot(val_losses, label="Validation Loss")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
+    plt.xlim(0, 100)
     plt.title("CNN Learning Curve")
     plt.grid(True)
     plt.legend()
