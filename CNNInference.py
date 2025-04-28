@@ -185,7 +185,7 @@ def get_racing_line_from_dataset(dataset_dir, model_path):
     model, config = load_model(model_path, device)
     model.eval()
 
-    dataset_files = glob(os.path.join(dataset_dir, "*.h5"))
+    dataset_files = glob(os.path.join(dataset_dir, "*.h5py"))
     print(f"Found {len(dataset_files)} dataset files.\n")
 
     for idx, file_path in tqdm(enumerate(dataset_files), desc="Predicting Datasets"):
@@ -232,14 +232,14 @@ def get_racing_line_from_dataset(dataset_dir, model_path):
         points_gt = ai_norm.reshape(-1, 1, 2)
         segments_gt = np.concatenate([points_gt[:-1], points_gt[1:]], axis=1)
 
-        plot_racing_lines(track_image=track["track_image"], segments_pred=segments_pred,
+        plot_racing_lines(track_image=track_image, segments_pred=segments_pred,
                           segments_gt=segments_gt, title=f"Ideal vs Predicted Line: {idx}")
-        plot_racing_lines(track_image=track["track_image"], segments_pred=segments_pred,
+        plot_racing_lines(track_image=track_image, segments_pred=segments_pred,
                           segments_gt=segments_gt, title=f"Speed Overlay: {idx}",
                           color_values=speed_val, cmap="viridis", label="Speed")
-        plot_racing_lines(track_image=track["track_image"], segments_pred=segments_pred,
+        plot_racing_lines(track_image=track_image, segments_pred=segments_pred,
                           segments_gt=segments_gt, title=f"Gas Pedal Overlay: {idx}",
                           color_values=gas_val, cmap="Greens", label="Gas Pedal")
-        plot_racing_lines(track_image=track["track_image"],segments_pred=segments_pred,
+        plot_racing_lines(track_image=track_image,segments_pred=segments_pred,
                           segments_gt=segments_gt, title=f"Brake Pedal Overlay: {idx}",
                           color_values=brake_val, cmap="Reds", label="Brake Pedal")
