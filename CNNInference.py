@@ -67,7 +67,7 @@ def plot_colored_racing_line(track_image, segments, color_values, cmap, label, t
     plt.show()
 
 
-# === CNN Inference Function ===
+# === CNN Inference Functions ===
 """
     Runs inference on a directory of track images using a trained 
     RoboTurbosky CNN model. Predicts centerline positions and 
@@ -133,47 +133,25 @@ def get_racing_line(images_dir, model_path):
 """
     Plots the track image with both predicted and ground truth racing lines.
 
-    If color_values are provided, the predicted line is colored based on them (e.g., speed, gas, brake).
-    If not, the predicted line is colored along a default gradient.
+    If `pred_feature` and `gt_feature` are provided, the predicted line is colorized based on `pred_feature`
+    values using the specified colormap, and a colorbar is added. The ground truth line is drawn in blue
+    with a dashed style for comparison.
+
+    If no features are provided, the predicted line is drawn in solid lime and the ground truth line in dashed blue.
 
     Args:
-        track_image (ndarray): Grayscale track image background.
-        segments_pred (ndarray): Predicted line segments (Nx2x2).
-        segments_gt (ndarray): Ground truth line segments (Nx2x2).
+        track_image (ndarray): Grayscale track image to use as the background.
+        segments_pred (ndarray): Predicted racing line segments (shape: [N, 2, 2]).
+        segments_gt (ndarray): Ground truth racing line segments (shape: [N, 2, 2]).
         title (str): Title of the plot.
-        color_values (ndarray or None): Control values for colorizing the predicted line.
-        cmap (str): Colormap for the predicted line.
-        label (str or None): Label for colorbar (only shown if color_values provided).
-        linesize (int): Thickness of the lines.
+        pred_feature (ndarray or None): Values to colorize the predicted line (e.g., speed, throttle).
+        gt_feature (ndarray or None): Values associated with the ground truth line (used for normalization only).
+        feature_name (str or None): Label for the colorbar (if features are provided).
+        cmap (str): Colormap to use for the predicted line when features are provided.
+        linesize (float): Thickness of the lines.
 """
-# def plot_racing_lines(track_image, segments_pred, segments_gt, title, color_values=None, cmap="plasma", label=None, linesize=3):
-#     fig, ax = plt.subplots(figsize=(12,8))
-#     ax.imshow(track_image, cmap="gray")
-
-#     if color_values is not None:
-#         if color_values.max() == color_values.min():
-#             norm = plt.Normalize(vmin=0, vmax=1)
-#         else:
-#             norm = plt.Normalize(vmin=color_values.min(), vmax=color_values.max())
-#         pred_lc = LineCollection(segments_pred, cmap=cmap, norm=norm, linewidth=linesize)
-#         pred_lc.set_array(color_values[:-1])
-#         ax.add_collection(pred_lc)
-#         plt.colorbar(pred_lc, ax=ax, label=label)
-#     else:
-#         pred_lc = LineCollection(segments_pred, cmap=cmap, norm=plt.Normalize(0,1), linewidth=linesize)
-#         pred_lc.set_array(np.linspace(0, 1, len(segments_pred)))
-#         ax.add_collection(pred_lc)
-
-#     gt_lc = LineCollection(segments_gt, colors="deepskyblue", linewidth=linesize, linestyle="dashed")
-#     ax.add_collection(gt_lc)
-
-#     plt.title(title)
-#     plt.axis('off')
-#     plt.show()
-
-
-def plot_racing_lines(track_image, segments_pred, segments_gt, title, pred_feature=None, gt_feature=None, feature_name=None, cmap="plasma", linesize=1):
-    fig, ax = plt.subplots(figsize=(12, 8))
+def plot_racing_lines(track_image, segments_pred, segments_gt, title, pred_feature=None, gt_feature=None, feature_name=None, cmap="plasma", linesize=1.5):
+    fig, ax = plt.subplots(figsize=(6, 6))
     ax.imshow(track_image, cmap="gray")
 
     if pred_feature is not None and gt_feature is not None:
@@ -188,7 +166,7 @@ def plot_racing_lines(track_image, segments_pred, segments_gt, title, pred_featu
         pred_lc.set_array(pred_feature[:-1])
         ax.add_collection(pred_lc)
 
-        gt_lc = LineCollection(segments_gt, cmap="deepskyblue", norm=norm, linewidth=linesize, linestyle=(0, (10, 10)))
+        gt_lc = LineCollection(segments_gt, cmap="Blues", norm=norm, linewidth=linesize, linestyle=(0, (10, 10)))
         gt_lc.set_array(gt_feature[:-1])
         ax.add_collection(gt_lc)
 
@@ -198,13 +176,13 @@ def plot_racing_lines(track_image, segments_pred, segments_gt, title, pred_featu
         
     else:
         pred_lc = LineCollection(segments_pred, colors="lime", linewidth=linesize, linestyle="solid")
-        gt_lc = LineCollection(segments_gt, colors="deepskyblue", linewidth=linesize, linestyle=(0, (10, 10)))
+        gt_lc = LineCollection(segments_gt, colors="blue", linewidth=linesize, linestyle=(0, (10, 10)))
         ax.add_collection(pred_lc)
         ax.add_collection(gt_lc)
 
         legend_elements = [
             Line2D([0], [0], color="lime", lw=2, label="Predicted Line"),
-            Line2D([0], [0], color="deepskyblue", lw=2, linestyle=(0, (10, 10)), label="Ground Truth")
+            Line2D([0], [0], color="blue", lw=2, linestyle=(0, (10, 10)), label="Ground Truth")
         ]
         ax.legend(handles=legend_elements, loc="lower right")
 
