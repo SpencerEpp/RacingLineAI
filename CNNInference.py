@@ -28,6 +28,7 @@ import torch as t
 import numpy as np
 from glob import glob
 from CNNModel import load_model
+from CNNCreateData import load_track_dataset
 from CNNDataManager import create_inference_data
 from matplotlib.collections import LineCollection
 import matplotlib.pyplot as plt
@@ -126,3 +127,119 @@ def get_racing_line(images_dir, model_path):
                                 label="Gas", title=f"Gas Pedal Overlay: {idx}")
         plot_colored_racing_line(track["track_image"], segments, brake_val, cmap="Reds",
                                 label="Brake", title=f"Brake Pedal Overlay: {idx}")
+        
+
+"""
+    Plots the track image with both predicted and ground truth racing lines.
+
+    If color_values are provided, the predicted line is colored based on them (e.g., speed, gas, brake).
+    If not, the predicted line is colored along a default gradient.
+
+    Args:
+        track_image (ndarray): Grayscale track image background.
+        segments_pred (ndarray): Predicted line segments (Nx2x2).
+        segments_gt (ndarray): Ground truth line segments (Nx2x2).
+        title (str): Title of the plot.
+        color_values (ndarray or None): Control values for colorizing the predicted line.
+        cmap (str): Colormap for the predicted line.
+        label (str or None): Label for colorbar (only shown if color_values provided).
+        linesize (int): Thickness of the lines.
+"""
+def plot_racing_lines(track_image, segments_pred, segments_gt, title, color_values=None, cmap="plasma", label=None, linesize=3):
+    fig, ax = plt.subplots(figsize=(12,8))
+    ax.imshow(track_image, cmap="gray")
+
+    if color_values is not None:
+        if color_values.max() == color_values.min():
+            norm = plt.Normalize(vmin=0, vmax=1)
+        else:
+            norm = plt.Normalize(vmin=color_values.min(), vmax=color_values.max())
+        pred_lc = LineCollection(segments_pred, cmap=cmap, norm=norm, linewidth=linesize)
+        pred_lc.set_array(color_values[:-1])
+        ax.add_collection(pred_lc)
+        plt.colorbar(pred_lc, ax=ax, label=label)
+    else:
+        pred_lc = LineCollection(segments_pred, cmap=cmap, norm=plt.Normalize(0,1), linewidth=linesize)
+        pred_lc.set_array(np.linspace(0, 1, len(segments_pred)))
+        ax.add_collection(pred_lc)
+
+    gt_lc = LineCollection(segments_gt, colors="deepskyblue", linewidth=linesize, linestyle="dashed")
+    ax.add_collection(gt_lc)
+
+    plt.title(title)
+    plt.axis('off')
+    plt.show()
+
+
+"""
+    Loads full track dataset files (.h5) using load_track_dataset(), runs inference with the trained CNN model,
+    and plots the track image, predicted racing line, and ground truth ideal line.
+    
+    Args:
+        dataset_dir (str): Directory containing .h5 dataset files.
+        model_path (str): Path to the trained model checkpoint.
+"""
+def get_racing_line_from_dataset(dataset_dir, model_path):
+    print("Loading model...")
+    device = "cuda" if t.cuda.is_available() else "cpu"
+    model, config = load_model(model_path, device)
+    model.eval()
+
+    dataset_files = glob(os.path.join(dataset_dir, "*.h5"))
+    print(f"Found {len(dataset_files)} dataset files.\n")
+
+    for idx, file_path in tqdm(enumerate(dataset_files), desc="Predicting Datasets"):
+
+        tqdm.write(f"[{idx}/{len(dataset_files)}] Predicting on: {os.path.basename(file_path)}")
+
+        track = load_track_dataset(file_path)
+        track_image = track["track_image"]
+        ai_norm = track["ai_norm"]
+        track_patches = track["track_patches"]
+        center = track["center"]
+        metadata = track["metadata"]
+        metadata_arr = np.column_stack([
+            metadata["distance"],
+            metadata["heading_x"],
+            metadata["heading_z"],
+            metadata["curvature"],
+            metadata["track_widths"],
+            metadata["track_avg_width"] * np.ones_like(metadata["distance"]),
+            metadata["track_min_width"] * np.ones_like(metadata["distance"]),
+            metadata["track_max_width"] * np.ones_like(metadata["distance"]),
+            metadata["track_total_length"] * np.ones_like(metadata["distance"]),
+            metadata["track_avg_curvature"] * np.ones_like(metadata["distance"]),
+            metadata["track_max_curvature"] * np.ones_like(metadata["distance"]),
+        ])
+
+        patches = t.tensor(np.array(track_patches), dtype=t.float32).unsqueeze(1).to(device)
+        center = t.tensor(np.array(center), dtype=t.float32).to(device)
+        metadata_tensor = t.tensor(np.array(metadata_arr), dtype=t.float32).to(device)
+
+        with t.inference_mode():
+            control_pred, position_pred = model(patches, center, metadata_tensor)
+
+        control_pred = control_pred.cpu().numpy()
+        position_pred = position_pred.cpu().numpy()
+
+        speed_val = control_pred[:, 0]
+        gas_val   = control_pred[:, 1]
+        brake_val = control_pred[:, 2]
+
+        points_pred = position_pred.reshape(-1, 1, 2)
+        segments_pred = np.concatenate([points_pred[:-1], points_pred[1:]], axis=1)
+
+        points_gt = ai_norm.reshape(-1, 1, 2)
+        segments_gt = np.concatenate([points_gt[:-1], points_gt[1:]], axis=1)
+
+        plot_racing_lines(track_image=track["track_image"], segments_pred=segments_pred,
+                          segments_gt=segments_gt, title=f"Ideal vs Predicted Line: {idx}")
+        plot_racing_lines(track_image=track["track_image"], segments_pred=segments_pred,
+                          segments_gt=segments_gt, title=f"Speed Overlay: {idx}",
+                          color_values=speed_val, cmap="viridis", label="Speed")
+        plot_racing_lines(track_image=track["track_image"], segments_pred=segments_pred,
+                          segments_gt=segments_gt, title=f"Gas Pedal Overlay: {idx}",
+                          color_values=gas_val, cmap="Greens", label="Gas Pedal")
+        plot_racing_lines(track_image=track["track_image"],segments_pred=segments_pred,
+                          segments_gt=segments_gt, title=f"Brake Pedal Overlay: {idx}",
+                          color_values=brake_val, cmap="Reds", label="Brake Pedal")
