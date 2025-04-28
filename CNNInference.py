@@ -162,27 +162,33 @@ def plot_racing_lines(track_image, segments_pred, segments_gt, title, pred_featu
             vmax = max(pred_feature.max(), gt_feature.max())
             norm = plt.Normalize(vmin=vmin, vmax=vmax)
 
-        pred_lc = LineCollection(segments_pred, cmap=cmap, norm=norm, linewidth=linesize)
-        pred_lc.set_array(pred_feature[:-1])
-        ax.add_collection(pred_lc)
-
         gt_lc = LineCollection(segments_gt, cmap="Blues", norm=norm, linewidth=linesize, linestyle=(0, (10, 10)))
         gt_lc.set_array(gt_feature[:-1])
         ax.add_collection(gt_lc)
+
+        pred_lc = LineCollection(segments_pred, cmap=cmap, norm=norm, linewidth=linesize)
+        pred_lc.set_array(pred_feature[:-1])
+        ax.add_collection(pred_lc)     
 
         cbar = plt.colorbar(pred_lc, ax=ax)
         if feature_name:
             cbar.set_label(feature_name)
         
+        legend_elements = [
+            Line2D([0], [0], color="lime", lw=2, label="Predicted Line"),
+            Line2D([0], [0], color="blue", lw=2, linestyle=(0, (10, 10)), label="AI line")
+        ]
+        ax.legend(handles=legend_elements, loc="lower right")
+        
     else:
-        pred_lc = LineCollection(segments_pred, colors="lime", linewidth=linesize, linestyle="solid")
         gt_lc = LineCollection(segments_gt, colors="blue", linewidth=linesize, linestyle=(0, (10, 10)))
+        pred_lc = LineCollection(segments_pred, colors="lime", linewidth=linesize, linestyle="solid")
         ax.add_collection(pred_lc)
         ax.add_collection(gt_lc)
 
         legend_elements = [
             Line2D([0], [0], color="lime", lw=2, label="Predicted Line"),
-            Line2D([0], [0], color="blue", lw=2, linestyle=(0, (10, 10)), label="Ground Truth")
+            Line2D([0], [0], color="blue", lw=2, linestyle=(0, (10, 10)), label="AI line")
         ]
         ax.legend(handles=legend_elements, loc="lower right")
 
