@@ -185,7 +185,7 @@ def train_model(model, train_loader, val_loader, config):
         if val_loss < best_val_loss:
             profiler.start("saving model")
             best_val_loss = val_loss
-            save_model(model, config, temp_save=(f"{config['model_save_path']}_{val_loss:.2f}.pt"))
+            save_model(model, config, temp_save=(f"{config['model_save_path']}_{val_loss:.4f}.pt"))
             epochs_without_improvement = 0
             profiler.start("saving model")
         else:
@@ -287,8 +287,11 @@ def run_input_ablation(device, model, val_loader):
 def run_pipeline(config):
     print("Preparing dataset...")
     profiler.start("Gathering Files and Split")
-    train_loader, val_loader = CNNDataManager.load_training_dataset(
+    train_loader, _ = CNNDataManager.load_training_dataset(
         config["dataset_dir"], config["device"], config["split_ratio"], batch_size=config["batch_size"], seed=config["seed"]
+    )
+    val_loader, _ = CNNDataManager.load_training_dataset(
+        config["valset_dir"], config["device"], 1, batch_size=config["batch_size"], seed=config["seed"]
     )
     profiler.stop("Gathering Files and Split")
     print("Total sequences loaded:", (len(train_loader)+len(val_loader)))
@@ -313,7 +316,7 @@ def run_pipeline(config):
     plt.plot(val_losses, label="Validation Loss")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.ylim(0, 100)
+    #plt.ylim(0, 100)
     plt.title("CNN Learning Curve")
     plt.grid(True)
     plt.legend()

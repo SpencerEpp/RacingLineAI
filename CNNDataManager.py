@@ -132,19 +132,23 @@ def load_training_dataset(dataset_dir, device, split_ratio, batch_size, seed=Non
     train_len = int(len(dataset) * split_ratio)
     val_len = len(dataset) - train_len
 
-    train_ds, val_ds = random_split(
-        dataset,
-        [train_len, val_len],
-        generator=generator
-    )
-
+    if split_ratio < 1:
+        train_ds, val_ds = random_split(
+            dataset,
+            [train_len, val_len],
+            generator=generator
+        )
+        val_loader = DataLoader(
+            val_ds,
+            batch_size=batch_size,
+            shuffle=True
+        )
+    else:
+        train_ds = dataset
+        val_loader = None
+    
     train_loader = DataLoader(
         train_ds,
-        batch_size=batch_size,
-        shuffle=True
-    )
-    val_loader = DataLoader(
-        val_ds,
         batch_size=batch_size,
         shuffle=True
     )
