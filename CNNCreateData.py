@@ -317,6 +317,7 @@ def align_ai_and_center(center, patches, ai_normed, ai_df):
         final_patches = patches[unique_idx]
         final_ai_df = ai_df.iloc[indices[unique_idx]].reset_index(drop=True)
         final_ai_normed = ai_normed[indices[unique_idx]]
+        selected_indices = unique_idx
 
     else:
         # More ai points → query center_tree with ai points
@@ -328,8 +329,31 @@ def align_ai_and_center(center, patches, ai_normed, ai_df):
         final_patches = patches[indices[unique_idx]]
         final_ai_df = ai_df.iloc[unique_idx].reset_index(drop=True)
         final_ai_normed = ai_normed[unique_idx]
+        selected_indices = indices[unique_idx]
 
-    return final_ai_df, final_ai_normed, final_center, final_patches
+    return final_ai_df, final_ai_normed, final_center, final_patches, selected_indices
+
+
+"""
+    Aligns metadata arrays to match new selected indices after aligning center and patches.
+
+    Args:
+        metadata (dict): Original metadata dictionary.
+        indices (np.ndarray): Indices to select.
+
+    Returns:
+        dict: Aligned metadata dictionary with arrays trimmed to indices.
+"""
+def align_metadata(metadata, indices):
+    aligned_metadata = {}
+
+    for key, value in metadata.items():
+        if isinstance(value, np.ndarray) and len(value) >= max(indices) + 1:
+            aligned_metadata[key] = value[indices]
+        else:
+            aligned_metadata[key] = value
+
+    return aligned_metadata
 
 
 """
@@ -419,7 +443,8 @@ def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
             fast_df = parse_ideal_line(fast_path)
             track_dict = process_track_image(image_path, target_size=target_size)
             ai_trans, ai_scale, ai_min_xy, ai_pad = normalize_ai(fast_df["x"], fast_df["z"], target_size=target_size)
-            aligned_df, aligned_norm, new_center, patches = align_ai_and_center(track_dict["center"], track_dict["patches"],  ai_trans, fast_df)
+            aligned_df, aligned_norm, new_center, patches, indices = align_ai_and_center(track_dict["center"], track_dict["patches"],  ai_trans, fast_df)
+            aligned_metadata = align_metadata(track_dict["metadata"], indices)
 
             track_dataset = {
                 #track information
@@ -433,7 +458,7 @@ def process_track(track_name, tracks_root, output_root, target_size=(256,256)):
                 "ai_df"       : aligned_df,
                 "ai_norm"     : aligned_norm,
                 "ai_transform": (ai_scale, ai_min_xy, ai_pad),
-                "metadata"    : track_dict["metadata"]
+                "metadata"    : aligned_metadata
             }
 
             save_track_data_as_hdf5(track_dataset, output_filename, output_root)

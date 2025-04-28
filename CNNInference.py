@@ -31,6 +31,7 @@ from CNNModel import load_model
 from CNNCreateData import load_track_dataset
 from CNNDataManager import create_inference_data
 from matplotlib.collections import LineCollection
+from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 from tqdm.notebook import tqdm
 
@@ -145,26 +146,67 @@ def get_racing_line(images_dir, model_path):
         label (str or None): Label for colorbar (only shown if color_values provided).
         linesize (int): Thickness of the lines.
 """
-def plot_racing_lines(track_image, segments_pred, segments_gt, title, color_values=None, cmap="plasma", label=None, linesize=3):
-    fig, ax = plt.subplots(figsize=(12,8))
+# def plot_racing_lines(track_image, segments_pred, segments_gt, title, color_values=None, cmap="plasma", label=None, linesize=3):
+#     fig, ax = plt.subplots(figsize=(12,8))
+#     ax.imshow(track_image, cmap="gray")
+
+#     if color_values is not None:
+#         if color_values.max() == color_values.min():
+#             norm = plt.Normalize(vmin=0, vmax=1)
+#         else:
+#             norm = plt.Normalize(vmin=color_values.min(), vmax=color_values.max())
+#         pred_lc = LineCollection(segments_pred, cmap=cmap, norm=norm, linewidth=linesize)
+#         pred_lc.set_array(color_values[:-1])
+#         ax.add_collection(pred_lc)
+#         plt.colorbar(pred_lc, ax=ax, label=label)
+#     else:
+#         pred_lc = LineCollection(segments_pred, cmap=cmap, norm=plt.Normalize(0,1), linewidth=linesize)
+#         pred_lc.set_array(np.linspace(0, 1, len(segments_pred)))
+#         ax.add_collection(pred_lc)
+
+#     gt_lc = LineCollection(segments_gt, colors="deepskyblue", linewidth=linesize, linestyle="dashed")
+#     ax.add_collection(gt_lc)
+
+#     plt.title(title)
+#     plt.axis('off')
+#     plt.show()
+
+
+def plot_racing_lines(track_image, segments_pred, segments_gt, title, pred_feature=None, gt_feature=None, feature_name=None, cmap="plasma", linesize=1):
+    fig, ax = plt.subplots(figsize=(12, 8))
     ax.imshow(track_image, cmap="gray")
 
-    if color_values is not None:
-        if color_values.max() == color_values.min():
+    if pred_feature is not None and gt_feature is not None:
+        if pred_feature.max() == pred_feature.min():
             norm = plt.Normalize(vmin=0, vmax=1)
         else:
-            norm = plt.Normalize(vmin=color_values.min(), vmax=color_values.max())
+            vmin = min(pred_feature.min(), gt_feature.min())
+            vmax = max(pred_feature.max(), gt_feature.max())
+            norm = plt.Normalize(vmin=vmin, vmax=vmax)
+
         pred_lc = LineCollection(segments_pred, cmap=cmap, norm=norm, linewidth=linesize)
-        pred_lc.set_array(color_values[:-1])
-        ax.add_collection(pred_lc)
-        plt.colorbar(pred_lc, ax=ax, label=label)
-    else:
-        pred_lc = LineCollection(segments_pred, cmap=cmap, norm=plt.Normalize(0,1), linewidth=linesize)
-        pred_lc.set_array(np.linspace(0, 1, len(segments_pred)))
+        pred_lc.set_array(pred_feature[:-1])
         ax.add_collection(pred_lc)
 
-    gt_lc = LineCollection(segments_gt, colors="deepskyblue", linewidth=linesize, linestyle="dashed")
-    ax.add_collection(gt_lc)
+        gt_lc = LineCollection(segments_gt, cmap="deepskyblue", norm=norm, linewidth=linesize, linestyle=(0, (10, 10)))
+        gt_lc.set_array(gt_feature[:-1])
+        ax.add_collection(gt_lc)
+
+        cbar = plt.colorbar(pred_lc, ax=ax)
+        if feature_name:
+            cbar.set_label(feature_name)
+        
+    else:
+        pred_lc = LineCollection(segments_pred, colors="lime", linewidth=linesize, linestyle="solid")
+        gt_lc = LineCollection(segments_gt, colors="deepskyblue", linewidth=linesize, linestyle=(0, (10, 10)))
+        ax.add_collection(pred_lc)
+        ax.add_collection(gt_lc)
+
+        legend_elements = [
+            Line2D([0], [0], color="lime", lw=2, label="Predicted Line"),
+            Line2D([0], [0], color="deepskyblue", lw=2, linestyle=(0, (10, 10)), label="Ground Truth")
+        ]
+        ax.legend(handles=legend_elements, loc="lower right")
 
     plt.title(title)
     plt.axis('off')
@@ -195,6 +237,7 @@ def get_racing_line_from_dataset(dataset_dir, model_path):
         track = load_track_dataset(file_path)
         track_image = track["track_image"]
         ai_norm = track["ai_norm"]
+        ai_df = track["ai_df"]
         track_patches = track["track_patches"]
         center = track["center"]
         metadata = track["metadata"]
@@ -232,14 +275,22 @@ def get_racing_line_from_dataset(dataset_dir, model_path):
         points_gt = ai_norm.reshape(-1, 1, 2)
         segments_gt = np.concatenate([points_gt[:-1], points_gt[1:]], axis=1)
 
-        plot_racing_lines(track_image=track_image, segments_pred=segments_pred,
-                          segments_gt=segments_gt, title=f"Ideal vs Predicted Line: {idx}")
-        plot_racing_lines(track_image=track_image, segments_pred=segments_pred,
-                          segments_gt=segments_gt, title=f"Speed Overlay: {idx}",
-                          color_values=speed_val, cmap="viridis", label="Speed")
-        plot_racing_lines(track_image=track_image, segments_pred=segments_pred,
-                          segments_gt=segments_gt, title=f"Gas Pedal Overlay: {idx}",
-                          color_values=gas_val, cmap="Greens", label="Gas Pedal")
-        plot_racing_lines(track_image=track_image,segments_pred=segments_pred,
-                          segments_gt=segments_gt, title=f"Brake Pedal Overlay: {idx}",
-                          color_values=brake_val, cmap="Reds", label="Brake Pedal")
+        # plot_racing_lines(track_image=track_image, segments_pred=segments_pred,
+        #                   segments_gt=segments_gt, title=f"Ideal vs Predicted Line: {idx}")
+        # plot_racing_lines(track_image=track_image, segments_pred=segments_pred,
+        #                   segments_gt=segments_gt, title=f"Speed Overlay: {idx}",
+        #                   color_values=speed_val, cmap="viridis", label="Speed")
+        # plot_racing_lines(track_image=track_image, segments_pred=segments_pred,
+        #                   segments_gt=segments_gt, title=f"Gas Pedal Overlay: {idx}",
+        #                   color_values=gas_val, cmap="Greens", label="Gas Pedal")
+        # plot_racing_lines(track_image=track_image,segments_pred=segments_pred,
+        #                   segments_gt=segments_gt, title=f"Brake Pedal Overlay: {idx}",
+        #                   color_values=brake_val, cmap="Reds", label="Brake Pedal")
+
+        plot_racing_lines(track_image, segments_pred, segments_gt, title="Predicted Line vs Ground Truth Line")
+        plot_racing_lines(track_image, segments_pred, segments_gt, title="Speed Overlay", pred_feature=speed_val,
+                          gt_feature=ai_df["speed"], feature_name="Speed (km/h)", cmap="viridis")
+        plot_racing_lines(track_image, segments_pred, segments_gt, title="Throttle Overlay", pred_feature=gas_val,
+                          gt_feature=ai_df["gas"], feature_name="Throttle (%)", cmap="plasma")
+        plot_racing_lines(track_image, segments_pred, segments_gt, title="Brake Overlay", pred_feature=brake_val,
+                          gt_feature=ai_df["brake"], feature_name="Brake (%)", cmap="inferno")
